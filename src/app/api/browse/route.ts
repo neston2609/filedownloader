@@ -96,10 +96,16 @@ export async function GET(req: NextRequest) {
         },
         scpPath.path, subPath
       )
-      return NextResponse.json({ entries, pathId: scpPath.id, protocol: 'scp' })
+      return NextResponse.json({
+        entries, pathId: scpPath.id, protocol: 'scp',
+        debug: { basePath: scpPath.path, subPath, host: scpPath.scpServer.host },
+      })
     } catch (err) {
       console.error('SCP browse error:', err)
-      return NextResponse.json({ error: (err as Error).message ?? 'SCP browse failed' }, { status: 500 })
+      return NextResponse.json({
+        error: (err as Error).message ?? 'SCP browse failed',
+        debug: { basePath: scpPath.path, subPath, host: scpPath.scpServer.host },
+      }, { status: 500 })
     }
   }
 

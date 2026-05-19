@@ -29,7 +29,7 @@ function buildConnectOptions(cfg: ScpConfig) {
     host: cfg.host,
     port: cfg.port,
     username: cfg.username,
-    readyTimeout: 15000,
+    readyTimeout: 30000,
   }
   if (cfg.privateKey && cfg.privateKey.trim()) {
     opts.privateKey = cfg.privateKey
@@ -42,8 +42,19 @@ function buildConnectOptions(cfg: ScpConfig) {
 
 function normalizePath(p: string): string {
   if (!p) return '/'
-  const s = p.replace(/\\/g, '/').replace(/\/+/g, '/')
+  // Trim whitespace, normalize separators, collapse repeated slashes,
+  // strip trailing slash (except for root). Preserves spaces & special
+  // chars inside path components — only edges are cleaned.
+  let s = p.trim().replace(/\\/g, '/').replace(/\/+/g, '/')
+  if (s.length > 1) s = s.replace(/\/+$/, '')
   return s.startsWith('/') ? s : `/${s}`
+}
+
+function joinPath(base: string, sub: string): string {
+  const b = base.trim()
+  const s = sub.trim()
+  if (!s) return normalizePath(b)
+  return normalizePath(`${b.replace(/[\\/]+$/, '')}/${s.replace(/^[\\/]+/, '')}`)
 }
 
 async function withClient<T>(cfg: ScpConfig, fn: (sftp: SftpClient) => Promise<T>): Promise<T> {
@@ -61,11 +72,11 @@ export async function listScpDirectory(
   basePath: string,
   subPath = ''
 ): Promise<ScpEntry[]> {
-  const full = normalizePath([basePath, subPath].filter(Boolean).join('/'))
+  const full = joinPath(basePath, subPath)
 
   return withClient(cfg, async (sftp) => {
     const list = await sftp.list(full)
-    return list
+    const filtered = list
       .filter((f) => f.name !== '.' && f.name !== '..')
       .map((f) => ({
         name: f.name,
@@ -73,6 +84,13 @@ export async function listScpDirectory(
         size: f.size,
         lastModified: new Date(f.modifyTime),
       }))
+
+    if (filtered.length === 0) {
+      console.warn(`[SCP] sftp.list("${full}") returned 0 entries (basePath="${basePath}", subPath="${subPath}")`)
+    } else {
+      console.log(`[SCP] listed ${filtered.length} entries in ${full}`)
+    }
+    return filtered
   })
 }
 
@@ -81,7 +99,7 @@ export async function streamScpFile(
   basePath: string,
   filePath: string
 ): Promise<NodeJS.ReadableStream> {
-  const full = normalizePath([basePath, filePath].filter(Boolean).join('/'))
+  const full = joinPath(basePath, filePath)
   const pass = new PassThrough()
 
   ;(async () => {

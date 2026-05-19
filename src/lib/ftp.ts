@@ -25,8 +25,16 @@ interface FtpConfig {
 
 function normalizePath(p: string): string {
   if (!p) return '/'
-  const s = p.replace(/\\/g, '/').replace(/\/+/g, '/')
+  let s = p.trim().replace(/\\/g, '/').replace(/\/+/g, '/')
+  if (s.length > 1) s = s.replace(/\/+$/, '')
   return s.startsWith('/') ? s : `/${s}`
+}
+
+function joinPath(base: string, sub: string): string {
+  const b = base.trim()
+  const s = sub.trim()
+  if (!s) return normalizePath(b)
+  return normalizePath(`${b.replace(/[\\/]+$/, '')}/${s.replace(/^[\\/]+/, '')}`)
 }
 
 async function withClient<T>(cfg: FtpConfig, fn: (client: Client) => Promise<T>): Promise<T> {
@@ -56,11 +64,11 @@ export async function listFtpDirectory(
   basePath: string,
   subPath = ''
 ): Promise<FtpEntry[]> {
-  const full = normalizePath([basePath, subPath].filter(Boolean).join('/'))
+  const full = joinPath(basePath, subPath)
 
   return withClient({ host, port, username, password, secure }, async (client) => {
     const list: FileInfo[] = await client.list(full)
-    return list
+    const filtered = list
       .filter((f) => f.name !== '.' && f.name !== '..')
       .map((f) => ({
         name: f.name,
@@ -68,6 +76,13 @@ export async function listFtpDirectory(
         size: f.size,
         lastModified: f.modifiedAt ?? new Date(),
       }))
+
+    if (filtered.length === 0) {
+      console.warn(`[FTP] list("${full}") returned 0 entries (basePath="${basePath}", subPath="${subPath}")`)
+    } else {
+      console.log(`[FTP] listed ${filtered.length} entries in ${full}`)
+    }
+    return filtered
   })
 }
 
@@ -80,7 +95,7 @@ export async function streamFtpFile(
   basePath: string,
   filePath: string
 ): Promise<NodeJS.ReadableStream> {
-  const full = normalizePath([basePath, filePath].filter(Boolean).join('/'))
+  const full = joinPath(basePath, filePath)
   const pass = new PassThrough()
 
   // Fire-and-forget the download; pipe into the PassThrough
