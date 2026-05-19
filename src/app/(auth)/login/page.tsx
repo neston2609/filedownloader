@@ -3,7 +3,7 @@ import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, Mail, LogIn, AlertCircle } from 'lucide-react'
+import { Lock, AtSign, LogIn, AlertCircle } from 'lucide-react'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -28,7 +28,7 @@ function LoginForm() {
 
     if (result?.error) {
       setError(result.error === 'CredentialsSignin'
-        ? 'Invalid email or password'
+        ? 'Invalid username/email or password'
         : result.error)
     } else {
       router.push('/download')
@@ -63,15 +63,16 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-300 mb-1.5">Email</label>
+            <label className="block text-sm text-slate-300 mb-1.5">Username or Email</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
-                type="email"
+                type="text"
                 required
+                autoComplete="username"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="johndoe or you@example.com"
                 className="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition"
               />
             </div>
