@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  password      String
+  role          Role     @default(MEMBER)
+  isActive      Boolean  @default(false)
+  paymentStatus String   @default("pending")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  categoryAccess UserCategoryAccess[]
+  downloadLogs   DownloadLog[]
+}
+
+model SmbServer {
+  id       String @id @default(cuid())
+  name     String
+  host     String
+  port     Int    @default(445)
+  username String
+  password String
+  domain   String @default("")
+
+  categoryPaths CategorySmbPath[]
+}
+
+model Category {
+  id                   String  @id @default(cuid())
+  name                 String
+  description          String  @default("")
+  affiliateLinkOverride String?
+  sortOrder            Int     @default(0)
+
+  smbPaths     CategorySmbPath[]
+  userAccess   UserCategoryAccess[]
+  downloadLogs DownloadLog[]
+}
+
+model CategorySmbPath {
+  id          String @id @default(cuid())
+  categoryId  String
+  smbServerId String
+  path        String
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  smbServer SmbServer @relation(fields: [smbServerId], references: [id], onDelete: Cascade)
+}
+
+model UserCategoryAccess {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  grantedAt  DateTime @default(now())
+  grantedBy  String?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+}
+
+model AffiliateSettings {
+  id         String   @id @default(cuid())
+  globalLink String   @default("")
+  updatedAt  DateTime @updatedAt
+}
+
+model DownloadLog {
+  id           String   @id @default(cuid())
+  userId       String
+  categoryId   String
+  filePath     String
+  affiliateUrl String?
+  createdAt    DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+}

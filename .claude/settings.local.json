@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\Claude\\\\fileDownloader\" -ErrorAction SilentlyContinue; if \\(-not \\(Test-Path \"C:\\\\Claude\\\\fileDownloader\"\\)\\) { Write-Host \"Directory does not exist\" } else { Write-Host \"Directory exists\" })",
+      "Bash(npm --version)",
+      "Read(//mnt/c/Claude/**)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --yes)",
+      "Read(//mnt/**)",
+      "Read(//c//**)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p /c/Claude/fileDownloader/src/app/\\\\\\(main\\\\\\)/download/\\\\[categoryId\\\\] && echo \"dir created\")",
+      "Bash(npx prisma *)",
+      "PowerShell(cd \"C:\\\\Claude\\\\fileDownloader\"; $env:DATABASE_URL=\"postgresql://postgres@103.40.118.129:5432/download_db\"; node node_modules/.bin/prisma generate 2>&1)",
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(git config *)",
+      "Bash(git add *)"
+    ]
+  }
+}
