@@ -10,12 +10,20 @@ export default async function DownloadPage() {
   const userId = session.user.id
   const isAdmin = session.user.role === 'ADMIN'
 
-  const [categories, accessRecords] = await Promise.all([
+  const [rawCategories, accessRecords] = await Promise.all([
     prisma.category.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }),
     isAdmin
       ? []
       : prisma.userCategoryAccess.findMany({ where: { userId }, select: { categoryId: true } }),
   ])
+
+  // Rewrite legacy /uploads/* URLs to the new /api/uploads/* route
+  const categories = rawCategories.map((c) => ({
+    ...c,
+    imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/')
+      ? `/api${c.imageUrl}`
+      : c.imageUrl,
+  }))
 
   const accessSet = new Set(accessRecords.map((r: { categoryId: string }) => r.categoryId))
 

@@ -15,7 +15,17 @@ export async function GET() {
     },
   })
 
-  return NextResponse.json(categories)
+  // Rewrite legacy /uploads/* URLs to the new /api/uploads/* route.
+  // Old images saved to public/uploads/ get served via the legacy root in
+  // the [...path] route handler.
+  const normalized = categories.map((c) => ({
+    ...c,
+    imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/')
+      ? `/api${c.imageUrl}`
+      : c.imageUrl,
+  }))
+
+  return NextResponse.json(normalized)
 }
 
 export async function POST(req: NextRequest) {
