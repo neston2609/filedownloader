@@ -73,7 +73,7 @@ export default function CategoriesPage() {
       })
       if (res.ok) {
         const created = await res.json()
-        setCategories(cs => [...cs, { ...created, smbPaths: [], ftpPaths: [] }])
+        setCategories(cs => [...cs, { ...created, smbPaths: created.smbPaths ?? [], ftpPaths: created.ftpPaths ?? [], scpPaths: created.scpPaths ?? [] }])
       }
     }
     setSaving(false)

@@ -27,6 +27,11 @@ export async function POST(req: NextRequest) {
 
   const category = await prisma.category.create({
     data: { name, description: description ?? '', affiliateLinkOverride: affiliateLinkOverride || null, sortOrder: sortOrder ?? 0 },
+    include: {
+      smbPaths: { include: { smbServer: { select: { id: true, name: true, host: true } } } },
+      ftpPaths: { include: { ftpServer: { select: { id: true, name: true, host: true, secure: true } } } },
+      scpPaths: { include: { scpServer: { select: { id: true, name: true, host: true } } } },
+    },
   })
 
   return NextResponse.json(category, { status: 201 })
