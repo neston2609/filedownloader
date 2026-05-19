@@ -71,7 +71,7 @@ export function NavBar({ user }: NavBarProps) {
               <span className="hidden sm:block font-display font-extrabold text-xl text-ink tracking-tight">SecureFiles</span>
             </Link>
 
-            <div className="flex items-center gap-1 overflow-x-auto">
+            <div className="flex items-center gap-1 flex-wrap">
               {navItems.map(({ href, label, icon: Icon }) => {
                 const exactOnly = href === '/download' || href === '/admin'
                 const active = exactOnly ? pathname === href : (pathname === href || pathname.startsWith(href + '/'))
