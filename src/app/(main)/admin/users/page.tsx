@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, Trash2, Shield, UserCheck, ChevronDown } from 'lucide-react'
+import { CheckCircle, XCircle, Trash2, Shield, UserCheck, ChevronDown, Plus, Mail, User as UserIcon, Lock, X, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 interface Category { id: string; name: string }
@@ -10,12 +10,19 @@ interface User {
   categoryAccess: { categoryId: string }[]
 }
 
+const EMPTY_NEW = { email: '', username: '', password: '', role: 'MEMBER', isActive: true, paymentStatus: 'pending' }
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedUser, setExpandedUser] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
+
+  const [showNewForm, setShowNewForm] = useState(false)
+  const [newUser, setNewUser] = useState({ ...EMPTY_NEW })
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -58,14 +65,156 @@ export default function UsersPage() {
     setUsers(us => us.filter(u => u.id !== id))
   }
 
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    setCreateError(null)
+
+    if (newUser.password.length < 8) {
+      setCreateError('Password must be at least 8 characters')
+      return
+    }
+
+    setCreating(true)
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `Failed (${res.status})`)
+      setUsers(us => [data, ...us])
+      setNewUser({ ...EMPTY_NEW })
+      setShowNewForm(false)
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create user')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   if (loading) return <div className="text-center py-16 text-slate-400">Loading users...</div>
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-slate-100">User Management</h1>
-        <span className="text-sm text-slate-500">{users.length} total members</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-500 hidden sm:block">{users.length} total members</span>
+          <button
+            onClick={() => { setShowNewForm(true); setNewUser({ ...EMPTY_NEW }); setCreateError(null) }}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" /> New User
+          </button>
+        </div>
       </div>
+
+      {/* New user modal */}
+      {showNewForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowNewForm(false)}>
+          <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700">
+              <h2 className="font-semibold text-slate-100">Create New User</h2>
+              <button onClick={() => setShowNewForm(false)} className="text-slate-400 hover:text-slate-200">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleCreate} className="p-5 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="email" required value={newUser.email}
+                    onChange={e => setNewUser(u => ({ ...u, email: e.target.value }))}
+                    placeholder="user@example.com"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Username</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text" required value={newUser.username}
+                    onChange={e => setNewUser(u => ({ ...u, username: e.target.value }))}
+                    placeholder="johndoe"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Password (min 8 chars)</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="password" required value={newUser.password}
+                    onChange={e => setNewUser(u => ({ ...u, password: e.target.value }))}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">Share this password with the user securely. They can change it from My Account after their first login.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Role</label>
+                  <select
+                    value={newUser.role}
+                    onChange={e => setNewUser(u => ({ ...u, role: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100"
+                  >
+                    <option value="MEMBER">Member</option>
+                    <option value="ADMIN">Administrator</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Payment</label>
+                  <select
+                    value={newUser.paymentStatus}
+                    onChange={e => setNewUser(u => ({ ...u, paymentStatus: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="expired">Expired</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={newUser.isActive}
+                  onChange={e => setNewUser(u => ({ ...u, isActive: e.target.checked }))}
+                  className="rounded border-slate-600"
+                />
+                Active immediately (can log in right away)
+              </label>
+
+              {createError && (
+                <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg p-2.5 text-xs text-red-300">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>{createError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowNewForm(false)} className="text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-slate-700/50 transition-colors">Cancel</button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  {creating ? 'Creating…' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {users.map(user => {

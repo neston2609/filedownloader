@@ -62,21 +62,26 @@ export function NavBar({ user }: NavBarProps) {
             </Link>
 
             <div className="flex items-center gap-1">
-              {navItems.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    pathname === href || (href !== '/download' && pathname.startsWith(href))
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden md:block">{label}</span>
-                </Link>
-              ))}
+              {navItems.map(({ href, label, icon: Icon }) => {
+                // Exact-only for hrefs that are prefixes of other pages
+                const exactOnly = href === '/download' || href === '/admin'
+                const active = exactOnly
+                  ? pathname === href
+                  : pathname === href || pathname.startsWith(href + '/')
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                      active ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden md:block">{label}</span>
+                  </Link>
+                )
+              })}
 
               {isAdmin && (
                 <div ref={dropdownRef} className="relative">
@@ -124,29 +129,38 @@ export function NavBar({ user }: NavBarProps) {
                 </div>
               )}
 
-              {adminTailItems.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    pathname === href || pathname.startsWith(href)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden md:block">{label}</span>
-                </Link>
-              ))}
+              {adminTailItems.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href || pathname.startsWith(href + '/')
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                      active ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden md:block">{label}</span>
+                  </Link>
+                )
+              })}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-slate-400 text-sm hidden sm:block">
+            <Link
+              href="/account"
+              className={cn(
+                'flex items-center gap-1.5 text-sm transition-colors hidden sm:flex px-2 py-1 rounded-lg',
+                pathname === '/account'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              )}
+            >
               {user.name}
-              {isAdmin && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Admin</span>}
-            </span>
+              {isAdmin && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-medium">Admin</span>}
+            </Link>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="flex items-center gap-1.5 text-slate-400 hover:text-red-400 transition-colors text-sm"
