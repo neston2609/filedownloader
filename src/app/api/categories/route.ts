@@ -8,7 +8,10 @@ export async function GET() {
 
   const categories = await prisma.category.findMany({
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-    include: { smbPaths: { include: { smbServer: { select: { id: true, name: true, host: true } } } } },
+    include: {
+      smbPaths: { include: { smbServer: { select: { id: true, name: true, host: true } } } },
+      ftpPaths: { include: { ftpServer: { select: { id: true, name: true, host: true } } } },
+    },
   })
 
   return NextResponse.json(categories)

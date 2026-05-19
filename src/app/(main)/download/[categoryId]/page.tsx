@@ -5,7 +5,7 @@ import { FileBrowser } from '@/components/FileBrowser'
 
 interface Props {
   params: { categoryId: string }
-  searchParams: { path?: string }
+  searchParams: { pathId?: string; path?: string }
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
@@ -18,18 +18,34 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     where: { id: params.categoryId },
     include: {
       smbPaths: { include: { smbServer: { select: { id: true, name: true } } } },
+      ftpPaths: { include: { ftpServer: { select: { id: true, name: true } } } },
     },
   })
 
   if (!category) notFound()
 
-  // Access check
   if (!isAdmin) {
     const access = await prisma.userCategoryAccess.findUnique({
       where: { userId_categoryId: { userId, categoryId: params.categoryId } },
     })
     if (!access) redirect('/download')
   }
+
+  // Merge SMB + FTP paths into a unified list
+  const paths = [
+    ...category.smbPaths.map((p) => ({
+      id: p.id,
+      protocol: 'smb' as const,
+      serverName: p.smbServer.name,
+      path: p.path,
+    })),
+    ...category.ftpPaths.map((p) => ({
+      id: p.id,
+      protocol: 'ftp' as const,
+      serverName: p.ftpServer.name,
+      path: p.path,
+    })),
+  ]
 
   // Resolve affiliate URL
   let affiliateUrl: string | null = category.affiliateLinkOverride
@@ -40,8 +56,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   return (
     <FileBrowser
-      category={category}
-      currentPath={searchParams.path ?? ''}
+      category={{ id: category.id, name: category.name, description: category.description }}
+      paths={paths}
+      initialPathId={searchParams.pathId ?? paths[0]?.id ?? null}
+      initialSubPath={searchParams.path ?? ''}
       affiliateUrl={affiliateUrl || null}
     />
   )

@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, Shield } from 'lucide-react'
+import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, Shield, HardDrive } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavBarProps {
@@ -18,7 +18,8 @@ export function NavBar({ user }: NavBarProps) {
     ...(isAdmin ? [
       { href: '/admin', label: 'Dashboard', icon: Settings },
       { href: '/admin/users', label: 'Users', icon: Users },
-      { href: '/admin/smb', label: 'SMB Servers', icon: Server },
+      { href: '/admin/smb', label: 'SMB Servers', icon: HardDrive },
+      { href: '/admin/ftp', label: 'FTP Servers', icon: Server },
       { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
       { href: '/admin/affiliate', label: 'Affiliate', icon: Link2 },
     ] : []),

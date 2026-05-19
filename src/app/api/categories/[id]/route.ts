@@ -20,7 +20,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(affiliateLinkOverride !== undefined && { affiliateLinkOverride: affiliateLinkOverride || null }),
       ...(sortOrder !== undefined && { sortOrder }),
     },
-    include: { smbPaths: { include: { smbServer: true } } },
+    include: {
+      smbPaths: { include: { smbServer: { select: { id: true, name: true, host: true } } } },
+      ftpPaths: { include: { ftpServer: { select: { id: true, name: true, host: true } } } },
+    },
   })
 
   return NextResponse.json(category)

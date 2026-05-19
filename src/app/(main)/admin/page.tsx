@@ -8,10 +8,11 @@ export default async function AdminDashboard() {
   const session = await auth()
   if (session?.user?.role !== 'ADMIN') redirect('/download')
 
-  const [userCount, pendingCount, serverCount, categoryCount, downloadCount] = await Promise.all([
+  const [userCount, pendingCount, smbCount, ftpCount, categoryCount, downloadCount] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { isActive: false } }),
     prisma.smbServer.count(),
+    prisma.ftpServer.count(),
     prisma.category.count(),
     prisma.downloadLog.count(),
   ])
@@ -19,7 +20,8 @@ export default async function AdminDashboard() {
   const cards = [
     { title: 'Total Members', value: userCount, icon: Users, color: 'blue', href: '/admin/users' },
     { title: 'Pending Approval', value: pendingCount, icon: UserCheck, color: 'amber', href: '/admin/users' },
-    { title: 'SMB Servers', value: serverCount, icon: Server, color: 'green', href: '/admin/smb' },
+    { title: 'SMB Servers', value: smbCount, icon: Server, color: 'green', href: '/admin/smb' },
+    { title: 'FTP Servers', value: ftpCount, icon: Server, color: 'green', href: '/admin/ftp' },
     { title: 'Categories', value: categoryCount, icon: FolderOpen, color: 'purple', href: '/admin/categories' },
     { title: 'Total Downloads', value: downloadCount, icon: TrendingDown, color: 'slate', href: '/admin' },
   ]
@@ -61,6 +63,7 @@ export default async function AdminDashboard() {
             {[
               { href: '/admin/users', label: 'Manage Users & Permissions', icon: Users },
               { href: '/admin/smb', label: 'Configure SMB Servers', icon: Server },
+              { href: '/admin/ftp', label: 'Configure FTP Servers', icon: Server },
               { href: '/admin/categories', label: 'Manage Categories & Paths', icon: FolderOpen },
               { href: '/admin/affiliate', label: 'Affiliate Link Settings', icon: Link2 },
             ].map(({ href, label, icon: Icon }) => (

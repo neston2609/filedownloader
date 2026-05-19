@@ -40,6 +40,19 @@ model SmbServer {
   categoryPaths CategorySmbPath[]
 }
 
+model FtpServer {
+  id       String  @id @default(cuid())
+  name     String
+  host     String
+  port     Int     @default(21)
+  username String
+  password String
+  secure   Boolean @default(false)
+  passive  Boolean @default(true)
+
+  categoryPaths CategoryFtpPath[]
+}
+
 model Category {
   id                   String  @id @default(cuid())
   name                 String
@@ -48,6 +61,7 @@ model Category {
   sortOrder            Int     @default(0)
 
   smbPaths     CategorySmbPath[]
+  ftpPaths     CategoryFtpPath[]
   userAccess   UserCategoryAccess[]
   downloadLogs DownloadLog[]
 }
@@ -60,6 +74,16 @@ model CategorySmbPath {
 
   category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   smbServer SmbServer @relation(fields: [smbServerId], references: [id], onDelete: Cascade)
+}
+
+model CategoryFtpPath {
+  id          String @id @default(cuid())
+  categoryId  String
+  ftpServerId String
+  path        String
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  ftpServer FtpServer @relation(fields: [ftpServerId], references: [id], onDelete: Cascade)
 }
 
 model UserCategoryAccess {
