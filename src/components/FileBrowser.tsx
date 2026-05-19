@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock, Terminal } from 'lucide-react'
+import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock, Terminal, Play } from 'lucide-react'
 import { formatBytes } from '@/lib/utils'
+import { isVideo } from '@/lib/media'
 
 interface SmbEntry {
   name: string
@@ -85,12 +86,14 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
     navigateTo(folderParts.slice(0, -1).join('/'))
   }
 
+  function buildFilePath(file: SmbEntry): string {
+    const sep = activePath?.protocol === 'smb' ? '\\' : '/'
+    return folderParts.length > 0 ? `${folderParts.join(sep)}${sep}${file.name}` : file.name
+  }
+
   async function handleDownload(file: SmbEntry) {
     if (!pathId) return
-    const sep = activePath?.protocol === 'smb' ? '\\' : '/'
-    const filePath = folderParts.length > 0
-      ? `${folderParts.join(sep)}${sep}${file.name}`
-      : file.name
+    const filePath = buildFilePath(file)
 
     setDownloadingFile(file.name)
 
@@ -109,6 +112,22 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
     document.body.removeChild(a)
 
     setTimeout(() => setDownloadingFile(null), 2000)
+  }
+
+  function handlePlay(file: SmbEntry) {
+    if (!pathId) return
+    const filePath = buildFilePath(file)
+    const playUrl = `/play/${encodeURIComponent(category.id)}?pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
+
+    // Affiliate popup FIRST (must be inside the click handler to avoid blockers),
+    // then open the player in a new tab.
+    if (affiliateUrl) {
+      window.open(affiliateUrl, '_blank', 'noopener,noreferrer')
+    }
+    // Tiny delay so the two window.open calls don't race the popup blocker
+    setTimeout(() => {
+      window.open(playUrl, '_blank', 'noopener,noreferrer')
+    }, 200)
   }
 
   return (
@@ -218,14 +237,26 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                     </div>
 
                     {!entry.isDirectory && (
-                      <button
-                        onClick={() => handleDownload(entry)}
-                        disabled={downloadingFile === entry.name}
-                        className="flex items-center gap-1.5 bg-ink hover:bg-ink2 disabled:bg-blue-300 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      >
-                        {downloadingFile === entry.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                        Download
-                      </button>
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                        {isVideo(entry.name) && (
+                          <button
+                            onClick={() => handlePlay(entry)}
+                            title="Play in browser"
+                            className="btn-retro flex items-center gap-1.5 bg-retro-coral hover:bg-retro-coral text-ink border-[1.5px] border-ink text-xs font-semibold px-3 py-1.5 rounded-full"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            Play
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDownload(entry)}
+                          disabled={downloadingFile === entry.name}
+                          className="btn-retro flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink disabled:opacity-60 text-xs font-semibold px-3 py-1.5 rounded-full"
+                        >
+                          {downloadingFile === entry.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                          Download
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}
