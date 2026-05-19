@@ -72,6 +72,7 @@ model Category {
   description          String  @default("")
   affiliateLinkOverride String?
   sortOrder            Int     @default(0)
+  imageUrl             String?
 
   smbPaths     CategorySmbPath[]
   ftpPaths     CategoryFtpPath[]

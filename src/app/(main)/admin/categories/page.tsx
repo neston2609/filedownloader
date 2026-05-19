@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal, FolderSearch } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal, FolderSearch, ImagePlus, ImageOff, Loader2 } from 'lucide-react'
 import { FolderPicker } from '@/components/FolderPicker'
 
 interface FileServer { id: string; name: string; host: string }
@@ -11,7 +11,8 @@ interface FtpPath { id: string; path: string; ftpServer: FtpServerFull }
 interface ScpPath { id: string; path: string; scpServer: FileServer }
 interface Category {
   id: string; name: string; description: string; affiliateLinkOverride: string | null
-  sortOrder: number; smbPaths: SmbPath[]; ftpPaths: FtpPath[]; scpPaths: ScpPath[]
+  sortOrder: number; imageUrl: string | null
+  smbPaths: SmbPath[]; ftpPaths: FtpPath[]; scpPaths: ScpPath[]
 }
 
 const EMPTY_CAT = { name: '', description: '', affiliateLinkOverride: '', sortOrder: 0 }
@@ -31,6 +32,8 @@ export default function CategoriesPage() {
   type Protocol = 'smb' | 'ftp' | 'ftps' | 'scp'
   const [pathForm, setPathForm] = useState<{ protocol: Protocol; serverId: string; path: string }>({ protocol: 'smb', serverId: '', path: '' })
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null)
+  const [imageError, setImageError] = useState<{ catId: string; msg: string } | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -119,6 +122,40 @@ export default function CategoriesPage() {
       await refreshCategories()
       setPathForm({ protocol: pathForm.protocol, serverId: '', path: '' })
       setAddingPath(null)
+    }
+  }
+
+  async function uploadImage(catId: string, file: File) {
+    setUploadingImage(catId)
+    setImageError(null)
+    try {
+      const fd = new FormData()
+      fd.append('image', file)
+      const res = await fetch(`/api/categories/${catId}/image`, { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `Upload failed (${res.status})`)
+      setCategories(cs => cs.map(c => c.id === catId ? { ...c, imageUrl: data.imageUrl } : c))
+    } catch (err) {
+      setImageError({ catId, msg: err instanceof Error ? err.message : 'Upload failed' })
+    } finally {
+      setUploadingImage(null)
+    }
+  }
+
+  async function removeImage(catId: string) {
+    if (!confirm('Remove this category image?')) return
+    setUploadingImage(catId)
+    try {
+      const res = await fetch(`/api/categories/${catId}/image`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? `Remove failed (${res.status})`)
+      }
+      setCategories(cs => cs.map(c => c.id === catId ? { ...c, imageUrl: null } : c))
+    } catch (err) {
+      setImageError({ catId, msg: err instanceof Error ? err.message : 'Remove failed' })
+    } finally {
+      setUploadingImage(null)
     }
   }
 
@@ -229,7 +266,14 @@ export default function CategoriesPage() {
             return (
               <div key={cat.id} className="bg-slate-800 border border-slate-700 rounded-xl shadow-sm overflow-hidden">
                 <div className="flex items-center gap-4 p-4">
-                  <FolderOpen className={`w-8 h-8 flex-shrink-0 ${totalPaths === 0 ? 'text-slate-300' : 'text-amber-400'}`} />
+                  {cat.imageUrl ? (
+                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-900 flex-shrink-0 relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <FolderOpen className={`w-8 h-8 flex-shrink-0 ${totalPaths === 0 ? 'text-slate-300' : 'text-amber-400'}`} />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-100">{cat.name}</p>
@@ -262,6 +306,63 @@ export default function CategoriesPage() {
 
                 {expandedCat === cat.id && (
                   <div className="border-t border-slate-700/50 p-4 bg-slate-800/50">
+                    {/* Image upload panel */}
+                    <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-1.5">
+                      <ImagePlus className="w-3.5 h-3.5" /> Category Image
+                    </h3>
+                    <div className="flex items-start gap-4 mb-5 p-3 bg-slate-900/50 border border-slate-700 rounded-lg">
+                      <div className="w-24 h-24 rounded-lg overflow-hidden bg-slate-900 border border-slate-700 flex-shrink-0 flex items-center justify-center">
+                        {cat.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageOff className="w-8 h-8 text-slate-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-400 mb-2">
+                          Shown to members on the download list. JPG / PNG / WebP / GIF, max 5 MB.
+                          Recommended 4:3 or 16:9, at least 600px wide.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <label className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${
+                            uploadingImage === cat.id ? 'bg-slate-700 text-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                          }`}>
+                            {uploadingImage === cat.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+                            {uploadingImage === cat.id ? 'Uploading…' : cat.imageUrl ? 'Replace image' : 'Upload image'}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              disabled={uploadingImage === cat.id}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0]
+                                if (f) {
+                                  uploadImage(cat.id, f)
+                                  e.target.value = ''
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                          {cat.imageUrl && (
+                            <button
+                              onClick={() => removeImage(cat.id)}
+                              disabled={uploadingImage === cat.id}
+                              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/30 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Remove
+                            </button>
+                          )}
+                        </div>
+                        {imageError?.catId === cat.id && (
+                          <p className="text-xs text-red-300 mt-2 flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                            {imageError.msg}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
                     <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-1.5">
                       <Server className="w-3.5 h-3.5" /> Server Paths
                     </h3>

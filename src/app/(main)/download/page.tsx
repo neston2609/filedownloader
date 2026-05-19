@@ -38,47 +38,62 @@ export default async function DownloadPage() {
             return (
               <div
                 key={cat.id}
-                className={`rounded-xl border-2 transition-all ${
+                className={`rounded-xl border-2 transition-all overflow-hidden flex flex-col ${
                   hasAccess
                     ? 'border-blue-500/30 bg-slate-800 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/10'
                     : 'border-slate-700 bg-slate-800/50 opacity-75'
                 }`}
               >
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${hasAccess ? 'bg-blue-500/20' : 'bg-slate-700/50'}`}>
-                        {hasAccess ? (
-                          <Unlock className="w-5 h-5 text-blue-400" />
-                        ) : (
-                          <Lock className="w-5 h-5 text-slate-500" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-100">{cat.name}</h3>
-                        {hasAccess ? (
-                          <span className="text-xs text-green-400 font-medium">Access granted</span>
-                        ) : (
-                          <span className="text-xs text-slate-500">No access</span>
-                        )}
-                      </div>
+                {/* Image header */}
+                <div className="relative aspect-video bg-slate-900 overflow-hidden">
+                  {cat.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cat.imageUrl}
+                      alt={cat.name}
+                      className={`w-full h-full object-cover transition-transform ${hasAccess ? 'group-hover:scale-105' : 'grayscale'}`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <FolderOpen className="w-14 h-14 text-slate-700" />
                     </div>
+                  )}
+                  {!hasAccess && (
+                    <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center">
+                      <Lock className="w-8 h-8 text-slate-300" />
+                    </div>
+                  )}
+                  {hasAccess && (
+                    <span className="absolute top-2 right-2 text-[10px] bg-green-500/90 text-white px-2 py-0.5 rounded-full font-medium backdrop-blur-sm">
+                      Access granted
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className={`p-1.5 rounded ${hasAccess ? 'bg-blue-500/20' : 'bg-slate-700/50'} flex-shrink-0`}>
+                      {hasAccess
+                        ? <Unlock className="w-4 h-4 text-blue-400" />
+                        : <Lock className="w-4 h-4 text-slate-500" />}
+                    </div>
+                    <h3 className="font-semibold text-slate-100 flex-1 min-w-0">{cat.name}</h3>
                   </div>
 
                   {cat.description && (
-                    <p className="text-sm text-slate-400 mb-4 line-clamp-2">{cat.description}</p>
+                    <p className="text-sm text-slate-400 mb-4 line-clamp-2 flex-1">{cat.description}</p>
                   )}
 
                   {hasAccess ? (
                     <Link
                       href={`/download/${cat.id}`}
-                      className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+                      className="mt-auto flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 rounded-lg transition-colors"
                     >
                       Browse Files
                       <ChevronRight className="w-4 h-4" />
                     </Link>
                   ) : (
-                    <div className="flex items-center justify-center gap-2 w-full bg-slate-700/50 text-slate-500 text-sm font-medium py-2 rounded-lg cursor-not-allowed border border-slate-700">
+                    <div className="mt-auto flex items-center justify-center gap-2 w-full bg-slate-700/50 text-slate-500 text-sm font-medium py-2 rounded-lg cursor-not-allowed border border-slate-700">
                       <Lock className="w-4 h-4" />
                       Contact admin for access
                     </div>
