@@ -2,7 +2,9 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, Unlock, FolderOpen, ChevronRight } from 'lucide-react'
+import { Lock, FolderOpen, ChevronRight, Sparkles } from 'lucide-react'
+
+const ACCENT_CYCLE = ['bg-retro-lime', 'bg-retro-sky', 'bg-retro-coral', 'bg-retro-lemon', 'bg-retro-mint', 'bg-retro-grape']
 
 export default async function DownloadPage() {
   const session = await auth()
@@ -12,98 +14,94 @@ export default async function DownloadPage() {
 
   const [rawCategories, accessRecords] = await Promise.all([
     prisma.category.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }),
-    isAdmin
-      ? []
-      : prisma.userCategoryAccess.findMany({ where: { userId }, select: { categoryId: true } }),
+    isAdmin ? [] : prisma.userCategoryAccess.findMany({ where: { userId }, select: { categoryId: true } }),
   ])
 
-  // Rewrite legacy /uploads/* URLs to the new /api/uploads/* route
   const categories = rawCategories.map((c) => ({
     ...c,
-    imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/')
-      ? `/api${c.imageUrl}`
-      : c.imageUrl,
+    imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/') ? `/api${c.imageUrl}` : c.imageUrl,
   }))
 
   const accessSet = new Set(accessRecords.map((r: { categoryId: string }) => r.categoryId))
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-100">Download Area</h1>
-        <p className="text-slate-400 mt-1">Browse available content categories below.</p>
+      <div className="mb-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-paper border-[1.5px] border-ink mb-4 shadow-hard-sm">
+          <span className="w-2 h-2 rounded-full bg-retro-coral" />
+          <span className="font-mono text-[11px] uppercase tracking-widest text-ink2">Member Library</span>
+        </div>
+        <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink leading-[1.02] tracking-tight">
+          Your <span className="swatch bg-retro-lime">downloads</span>,
+          <br />
+          one click <span className="swatch coral bg-retro-coral">away</span>
+        </h1>
+        <p className="text-ink2 mt-4 text-lg max-w-xl">Browse every category you have access to. Click a card to dive into the files.</p>
       </div>
 
       {categories.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
-          <FolderOpen className="w-16 h-16 mx-auto mb-4 opacity-30" />
-          <p className="text-lg">No categories available yet.</p>
+        <div className="bg-paper border-[1.5px] border-ink rounded-retro p-16 text-center shadow-hard">
+          <Sparkles className="w-12 h-12 text-retro-coral mx-auto mb-4" />
+          <p className="font-display text-2xl text-ink">Nothing here yet</p>
+          <p className="text-ink2 mt-2 text-sm">No categories have been published. Check back soon.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((cat) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {categories.map((cat, idx) => {
             const hasAccess = isAdmin || accessSet.has(cat.id)
+            const accent = ACCENT_CYCLE[idx % ACCENT_CYCLE.length]
             return (
               <div
                 key={cat.id}
-                className={`rounded-xl border-2 transition-all overflow-hidden flex flex-col ${
-                  hasAccess
-                    ? 'border-blue-500/30 bg-slate-800 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/10'
-                    : 'border-slate-700 bg-slate-800/50 opacity-75'
+                className={`card-retro relative bg-paper border-[1.5px] border-ink rounded-retro overflow-hidden flex flex-col ${
+                  hasAccess ? 'shadow-hard' : 'opacity-70'
                 }`}
               >
                 {/* Image header */}
-                <div className="relative aspect-video bg-slate-900 overflow-hidden">
+                <div className={`relative aspect-video overflow-hidden ${cat.imageUrl ? 'bg-bg2' : accent}`}>
                   {cat.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={cat.imageUrl}
                       alt={cat.name}
-                      className={`w-full h-full object-cover transition-transform ${hasAccess ? 'group-hover:scale-105' : 'grayscale'}`}
+                      className={`w-full h-full object-cover ${hasAccess ? '' : 'grayscale'}`}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <FolderOpen className="w-14 h-14 text-slate-700" />
+                      <FolderOpen className="w-16 h-16 text-ink" strokeWidth={1.5} />
                     </div>
                   )}
                   {!hasAccess && (
-                    <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center">
-                      <Lock className="w-8 h-8 text-slate-300" />
+                    <div className="absolute inset-0 bg-ink/40 flex items-center justify-center">
+                      <Lock className="w-10 h-10 text-paper" strokeWidth={2} />
                     </div>
                   )}
                   {hasAccess && (
-                    <span className="absolute top-2 right-2 text-[10px] bg-green-500/90 text-white px-2 py-0.5 rounded-full font-medium backdrop-blur-sm">
-                      Access granted
+                    <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-retro-mint border-[1.5px] border-ink text-[10px] font-mono font-bold text-ink px-2.5 py-1 rounded-full uppercase tracking-wider shadow-hard-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-ink" />
+                      Unlocked
                     </span>
                   )}
                 </div>
 
-                <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex items-start gap-2 mb-2">
-                    <div className={`p-1.5 rounded ${hasAccess ? 'bg-blue-500/20' : 'bg-slate-700/50'} flex-shrink-0`}>
-                      {hasAccess
-                        ? <Unlock className="w-4 h-4 text-blue-400" />
-                        : <Lock className="w-4 h-4 text-slate-500" />}
-                    </div>
-                    <h3 className="font-semibold text-slate-100 flex-1 min-w-0">{cat.name}</h3>
-                  </div>
-
+                <div className="p-5 flex-1 flex flex-col bg-paper">
+                  <h3 className="font-display text-2xl font-bold text-ink leading-tight mb-1.5">{cat.name}</h3>
                   {cat.description && (
-                    <p className="text-sm text-slate-400 mb-4 line-clamp-2 flex-1">{cat.description}</p>
+                    <p className="text-sm text-ink2 line-clamp-2 mb-4 flex-1">{cat.description}</p>
                   )}
 
                   {hasAccess ? (
                     <Link
                       href={`/download/${cat.id}`}
-                      className="mt-auto flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+                      className="btn-retro mt-auto inline-flex items-center justify-center gap-1.5 w-full bg-ink text-retro-lime border-[1.5px] border-ink text-sm font-semibold py-2.5 rounded-full"
                     >
-                      Browse Files
+                      Browse files
                       <ChevronRight className="w-4 h-4" />
                     </Link>
                   ) : (
-                    <div className="mt-auto flex items-center justify-center gap-2 w-full bg-slate-700/50 text-slate-500 text-sm font-medium py-2 rounded-lg cursor-not-allowed border border-slate-700">
-                      <Lock className="w-4 h-4" />
-                      Contact admin for access
+                    <div className="mt-auto inline-flex items-center justify-center gap-1.5 w-full bg-bg2 text-ink2 text-sm font-medium py-2.5 rounded-full border-[1.5px] border-ink/30 cursor-not-allowed">
+                      <Lock className="w-3.5 h-3.5" />
+                      Ask admin for access
                     </div>
                   )}
                 </div>

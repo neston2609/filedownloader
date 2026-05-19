@@ -93,17 +93,17 @@ export default function UsersPage() {
     }
   }
 
-  if (loading) return <div className="text-center py-16 text-slate-400">Loading users...</div>
+  if (loading) return <div className="text-center py-16 text-mute">Loading users...</div>
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-slate-100">User Management</h1>
+        <h1 className="text-3xl font-bold text-ink">User Management</h1>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-500 hidden sm:block">{users.length} total members</span>
+          <span className="text-sm text-mute hidden sm:block">{users.length} total members</span>
           <button
             onClick={() => { setShowNewForm(true); setNewUser({ ...EMPTY_NEW }); setCreateError(null) }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 bg-ink hover:bg-ink2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             <Plus className="w-4 h-4" /> New User
           </button>
@@ -112,70 +112,70 @@ export default function UsersPage() {
 
       {/* New user modal */}
       {showNewForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowNewForm(false)}>
-          <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700">
-              <h2 className="font-semibold text-slate-100">Create New User</h2>
-              <button onClick={() => setShowNewForm(false)} className="text-slate-400 hover:text-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm" onClick={() => setShowNewForm(false)}>
+          <div className="bg-paper border-[1.5px] border-ink rounded-2xl shadow-hard-lg w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-ink">
+              <h2 className="font-semibold text-ink">Create New User</h2>
+              <button onClick={() => setShowNewForm(false)} className="text-mute hover:text-ink">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Email</label>
+                <label className="block text-xs font-medium text-ink2 mb-1">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mute" />
                   <input
                     type="email" required value={newUser.email}
                     onChange={e => setNewUser(u => ({ ...u, email: e.target.value }))}
                     placeholder="user@example.com"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-full bg-bg2 border border-ink rounded-lg py-2 pl-10 pr-3 text-sm text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Username</label>
+                <label className="block text-xs font-medium text-ink2 mb-1">Username</label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mute" />
                   <input
                     type="text" required value={newUser.username}
                     onChange={e => setNewUser(u => ({ ...u, username: e.target.value }))}
                     placeholder="johndoe"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-full bg-bg2 border border-ink rounded-lg py-2 pl-10 pr-3 text-sm text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Password (min 8 chars)</label>
+                <label className="block text-xs font-medium text-ink2 mb-1">Password (min 8 chars)</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mute" />
                   <input
                     type="password" required value={newUser.password}
                     onChange={e => setNewUser(u => ({ ...u, password: e.target.value }))}
                     placeholder="••••••••"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-full bg-bg2 border border-ink rounded-lg py-2 pl-10 pr-3 text-sm text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">Share this password with the user securely. They can change it from My Account after their first login.</p>
+                <p className="text-[11px] text-mute mt-1">Share this password with the user securely. They can change it from My Account after their first login.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Role</label>
+                  <label className="block text-xs font-medium text-ink2 mb-1">Role</label>
                   <select
                     value={newUser.role}
                     onChange={e => setNewUser(u => ({ ...u, role: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100"
+                    className="w-full bg-bg2 border border-ink rounded-lg px-3 py-2 text-sm text-ink"
                   >
                     <option value="MEMBER">Member</option>
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Payment</label>
+                  <label className="block text-xs font-medium text-ink2 mb-1">Payment</label>
                   <select
                     value={newUser.paymentStatus}
                     onChange={e => setNewUser(u => ({ ...u, paymentStatus: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100"
+                    className="w-full bg-bg2 border border-ink rounded-lg px-3 py-2 text-sm text-ink"
                   >
                     <option value="pending">Pending</option>
                     <option value="paid">Paid</option>
@@ -184,29 +184,29 @@ export default function UsersPage() {
                   </select>
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer pt-1">
+              <label className="flex items-center gap-2 text-sm text-ink cursor-pointer pt-1">
                 <input
                   type="checkbox"
                   checked={newUser.isActive}
                   onChange={e => setNewUser(u => ({ ...u, isActive: e.target.checked }))}
-                  className="rounded border-slate-600"
+                  className="rounded border-ink/30"
                 />
                 Active immediately (can log in right away)
               </label>
 
               {createError && (
-                <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg p-2.5 text-xs text-red-300">
+                <div className="flex items-start gap-2 bg-retro-coral/20 border border-retro-coral rounded-lg p-2.5 text-xs text-retro-coral">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{createError}</span>
                 </div>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowNewForm(false)} className="text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-slate-700/50 transition-colors">Cancel</button>
+                <button type="button" onClick={() => setShowNewForm(false)} className="text-ink2 px-4 py-2 rounded-lg text-sm hover:bg-bg2 transition-colors">Cancel</button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-ink hover:bg-ink2 disabled:bg-line text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   {creating ? 'Creating…' : 'Create User'}
                 </button>
@@ -222,7 +222,7 @@ export default function UsersPage() {
           const isExpanded = expandedUser === user.id
 
           return (
-            <div key={user.id} className="bg-slate-800 border border-slate-700 rounded-xl shadow-sm overflow-hidden">
+            <div key={user.id} className="bg-paper border-[1.5px] border-ink rounded-2xl shadow-hard-sm overflow-hidden">
               <div className="flex items-center gap-4 p-4">
                 {/* Status toggle */}
                 <button
@@ -231,32 +231,32 @@ export default function UsersPage() {
                   className="flex-shrink-0"
                 >
                   {user.isActive ? (
-                    <CheckCircle className="w-6 h-6 text-green-500 hover:text-green-300 transition-colors" />
+                    <CheckCircle className="w-6 h-6 text-ink hover:text-ink transition-colors" />
                   ) : (
-                    <XCircle className="w-6 h-6 text-slate-300 hover:text-green-500 transition-colors" />
+                    <XCircle className="w-6 h-6 text-ink2 hover:text-ink transition-colors" />
                   )}
                 </button>
 
                 {/* User info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-slate-100">{user.username}</span>
+                    <span className="font-semibold text-ink">{user.username}</span>
                     {user.role === 'ADMIN' && (
-                      <span className="text-xs bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-medium">Admin</span>
+                      <span className="text-xs bg-retro-lemon text-ink px-1.5 py-0.5 rounded font-medium">Admin</span>
                     )}
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                      user.paymentStatus === 'paid' ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-500'
+                      user.paymentStatus === 'paid' ? 'bg-retro-mint text-ink' : 'bg-bg2 text-mute'
                     }`}>{user.paymentStatus}</span>
                   </div>
-                  <p className="text-sm text-slate-500 truncate">{user.email}</p>
-                  <p className="text-xs text-slate-400">Joined {formatDate(user.createdAt)}</p>
+                  <p className="text-sm text-mute truncate">{user.email}</p>
+                  <p className="text-xs text-mute">Joined {formatDate(user.createdAt)}</p>
                 </div>
 
                 {/* Payment status */}
                 <select
                   value={user.paymentStatus}
                   onChange={e => updateUser(user.id, { paymentStatus: e.target.value })}
-                  className="text-xs border border-slate-700 rounded-lg px-2 py-1 bg-slate-800 hidden md:block"
+                  className="text-xs border border-ink rounded-lg px-2 py-1 bg-paper hidden md:block"
                 >
                   {['pending', 'paid', 'expired', 'refunded'].map(s => (
                     <option key={s} value={s}>{s}</option>
@@ -264,14 +264,14 @@ export default function UsersPage() {
                 </select>
 
                 {/* Access count */}
-                <span className="text-sm text-slate-400 hidden sm:block">
+                <span className="text-sm text-mute hidden sm:block">
                   {accessSet.size}/{categories.length} categories
                 </span>
 
                 {/* Expand */}
                 <button
                   onClick={() => setExpandedUser(isExpanded ? null : user.id)}
-                  className="text-slate-400 hover:text-slate-300 transition-colors p-1"
+                  className="text-mute hover:text-ink2 transition-colors p-1"
                 >
                   <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </button>
@@ -279,7 +279,7 @@ export default function UsersPage() {
                 {/* Delete */}
                 <button
                   onClick={() => deleteUser(user.id)}
-                  className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                  className="text-ink2 hover:text-retro-coral transition-colors p-1"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -287,9 +287,9 @@ export default function UsersPage() {
 
               {/* Expanded: category permissions + notes */}
               {isExpanded && (
-                <div className="border-t border-slate-700/50 p-4 bg-slate-800/50 space-y-4">
+                <div className="border-t border-line p-4 bg-bg2/50 space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-200 mb-2 flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold text-ink mb-2 flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5" /> Category Access
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -303,8 +303,8 @@ export default function UsersPage() {
                             disabled={saving === key}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
                               has
-                                ? 'bg-blue-500/10 border-blue-500 text-blue-300 hover:bg-blue-500/20'
-                                : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-400'
+                                ? 'bg-retro-sky/30 border-blue-500 text-ink hover:bg-retro-sky'
+                                : 'bg-paper border-ink text-mute hover:border-slate-400'
                             }`}
                           >
                             {has ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
@@ -316,24 +316,24 @@ export default function UsersPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-200 mb-1.5">Notes</h3>
+                    <h3 className="text-sm font-semibold text-ink mb-1.5">Notes</h3>
                     <textarea
                       defaultValue={user.notes}
                       onBlur={e => updateUser(user.id, { notes: e.target.value })}
                       rows={2}
                       placeholder="Admin notes about this user..."
-                      className="w-full text-sm border border-slate-700 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      className="w-full text-sm border border-ink rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
                     />
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <label className="text-sm text-slate-300">Role:</label>
+                    <label className="text-sm text-ink2">Role:</label>
                     <button
                       onClick={() => updateUser(user.id, { role: user.role === 'ADMIN' ? 'MEMBER' : 'ADMIN' })}
                       className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium border transition-colors ${
                         user.role === 'ADMIN'
-                          ? 'bg-amber-500/10 border-amber-300 text-amber-300 hover:bg-amber-500/20'
-                          : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-400'
+                          ? 'bg-retro-lemon/30 border-amber-300 text-ink2 hover:bg-amber-500/20'
+                          : 'bg-bg2/50 border-ink text-ink2 hover:border-slate-400'
                       }`}
                     >
                       <UserCheck className="w-3.5 h-3.5" />

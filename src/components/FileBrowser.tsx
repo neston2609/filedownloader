@@ -114,17 +114,17 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/download" className="text-slate-400 hover:text-slate-300 transition-colors">
+        <Link href="/download" className="text-mute hover:text-ink2 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">{category.name}</h1>
-          {category.description && <p className="text-slate-500 text-sm">{category.description}</p>}
+          <h1 className="text-2xl font-bold text-ink">{category.name}</h1>
+          {category.description && <p className="text-mute text-sm">{category.description}</p>}
         </div>
       </div>
 
       {paths.length === 0 ? (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 text-amber-200 text-sm">
+        <div className="bg-retro-lemon/30 border border-ink/40 rounded-xl p-5 text-ink text-sm">
           No SMB or FTP paths are linked to this category yet.
         </div>
       ) : (
@@ -142,8 +142,8 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                     onClick={() => selectPath(p.id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                       pathId === p.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-ink text-white'
+                        : 'bg-bg2 text-ink2 hover:bg-line'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -155,8 +155,8 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
             </div>
           )}
 
-          <nav className="flex items-center gap-1 text-sm text-slate-500 mb-4 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 flex-wrap">
-            <button onClick={() => navigateTo('')} className="flex items-center gap-1 hover:text-blue-400 transition-colors">
+          <nav className="flex items-center gap-1 text-sm text-mute mb-4 bg-paper border border-ink rounded-lg px-3 py-2 flex-wrap">
+            <button onClick={() => navigateTo('')} className="flex items-center gap-1 hover:text-ink transition-colors">
               <Home className="w-3.5 h-3.5" />
               <span>Root</span>
             </button>
@@ -165,7 +165,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                 <ChevronRight className="w-3.5 h-3.5" />
                 <button
                   onClick={() => navigateTo(folderParts.slice(0, i + 1).join('/'))}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-ink transition-colors"
                 >
                   {part}
                 </button>
@@ -173,47 +173,47 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
             ))}
           </nav>
 
-          <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-paper border-[1.5px] border-ink rounded-2xl overflow-hidden shadow-sm">
             {loading ? (
-              <div className="flex items-center justify-center py-16 text-slate-400">
+              <div className="flex items-center justify-center py-16 text-mute">
                 <Loader2 className="w-6 h-6 animate-spin mr-2" />
                 Loading files...
               </div>
             ) : error ? (
-              <div className="flex items-center justify-center gap-2 py-16 text-red-500">
+              <div className="flex items-center justify-center gap-2 py-16 text-retro-coral">
                 <AlertCircle className="w-5 h-5" />
                 {error}
               </div>
             ) : entries.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+              <div className="flex flex-col items-center justify-center py-16 text-mute">
                 <Folder className="w-12 h-12 mb-3 opacity-30" />
                 <p>This folder is empty</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-700/50">
+              <div className="divide-y divide-line">
                 {subPath && (
-                  <button onClick={navigateUp} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 transition-colors text-left">
-                    <Folder className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                    <span className="text-slate-500 text-sm font-mono">..</span>
+                  <button onClick={navigateUp} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-bg2/50 transition-colors text-left">
+                    <Folder className="w-5 h-5 text-ink flex-shrink-0" />
+                    <span className="text-mute text-sm font-mono">..</span>
                   </button>
                 )}
                 {entries.map((entry) => (
-                  <div key={entry.name} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 transition-colors group">
+                  <div key={entry.name} className="flex items-center gap-3 px-4 py-3 hover:bg-bg2/50 transition-colors group">
                     {entry.isDirectory ? (
-                      <Folder className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                      <Folder className="w-5 h-5 text-ink flex-shrink-0" />
                     ) : (
-                      <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                      <FileText className="w-5 h-5 text-ink flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
                       {entry.isDirectory ? (
-                        <button onClick={() => navigateInto(entry.name)} className="text-sm font-medium text-slate-200 hover:text-blue-400 transition-colors truncate block w-full text-left">
+                        <button onClick={() => navigateInto(entry.name)} className="text-sm font-medium text-ink hover:text-ink transition-colors truncate block w-full text-left">
                           {entry.name}
                         </button>
                       ) : (
-                        <span className="text-sm text-slate-200 truncate block">{entry.name}</span>
+                        <span className="text-sm text-ink truncate block">{entry.name}</span>
                       )}
                       {!entry.isDirectory && entry.size > 0 && (
-                        <span className="text-xs text-slate-400">{formatBytes(entry.size)}</span>
+                        <span className="text-xs text-mute">{formatBytes(entry.size)}</span>
                       )}
                     </div>
 
@@ -221,7 +221,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                       <button
                         onClick={() => handleDownload(entry)}
                         disabled={downloadingFile === entry.name}
-                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        className="flex items-center gap-1.5 bg-ink hover:bg-ink2 disabled:bg-blue-300 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                       >
                         {downloadingFile === entry.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                         Download
@@ -234,7 +234,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
           </div>
 
           {affiliateUrl && (
-            <p className="text-xs text-slate-400 mt-3 text-center">
+            <p className="text-xs text-mute mt-3 text-center">
               Downloads open a partner link in a new tab. Your download starts immediately after.
             </p>
           )}

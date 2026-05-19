@@ -137,7 +137,7 @@ function FtpPageInner() {
     setSaveError(null)
   }
 
-  if (loading) return <div className="text-center py-16 text-slate-400">Loading...</div>
+  if (loading) return <div className="text-center py-16 text-mute">Loading...</div>
 
   const visibleServers = typeFilter === 'ftp'
     ? servers.filter(s => !s.secure)
@@ -148,42 +148,42 @@ function FtpPageInner() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-slate-100">
+        <h1 className="text-3xl font-bold text-ink">
           {typeFilter === 'ftp' ? 'FTP Servers' : typeFilter === 'ftps' ? 'FTPS Servers' : 'FTP / FTPS Servers'}
         </h1>
-        <button onClick={startNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button onClick={startNew} className="flex items-center gap-2 bg-ink hover:bg-ink2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           <Plus className="w-4 h-4" /> Add Server
         </button>
       </div>
 
       {typeFilter && (
-        <div className="mb-4 text-xs text-slate-500 flex items-center gap-2">
+        <div className="mb-4 text-xs text-mute flex items-center gap-2">
           <Info className="w-3.5 h-3.5" />
           Showing {typeFilter === 'ftps' ? 'TLS-encrypted FTPS' : 'plain FTP'} servers only.
-          <a href="/admin/ftp" className="text-blue-400 hover:underline">View all</a>
+          <a href="/admin/ftp" className="text-ink hover:underline">View all</a>
         </div>
       )}
 
       {showForm && (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-6 shadow-sm">
+        <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-5 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-100">{editId ? 'Edit Server' : 'New FTP Server'}</h2>
-            <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-300">
+            <h2 className="font-semibold text-ink">{editId ? 'Edit Server' : 'New FTP Server'}</h2>
+            <button onClick={() => setShowForm(false)} className="text-mute hover:text-ink2">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Protocol selector */}
           <div className="mb-4">
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Protocol</label>
+            <label className="block text-xs font-medium text-ink2 mb-1.5">Protocol</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, secure: false, port: f.port === FTPS_PORT ? FTP_PORT : f.port }))}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
                   !form.secure
-                    ? 'bg-blue-500/10 border-blue-500 text-blue-300'
-                    : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-400'
+                    ? 'bg-retro-sky/30 border-blue-500 text-ink'
+                    : 'bg-paper border-ink text-mute hover:border-slate-400'
                 }`}
               >
                 <Server className="w-4 h-4" />
@@ -195,8 +195,8 @@ function FtpPageInner() {
                 onClick={() => setForm(f => ({ ...f, secure: true, port: f.port === FTP_PORT ? FTPS_PORT : f.port }))}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
                   form.secure
-                    ? 'bg-green-500/10 border-green-500 text-green-300'
-                    : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-400'
+                    ? 'bg-retro-mint/30 border-green-500 text-ink'
+                    : 'bg-paper border-ink text-mute hover:border-slate-400'
                 }`}
               >
                 <Lock className="w-4 h-4" />
@@ -204,7 +204,7 @@ function FtpPageInner() {
                 <span className="text-[10px] opacity-75">(TLS-encrypted)</span>
               </button>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1.5">
+            <p className="text-[11px] text-mute mt-1.5">
               {form.secure
                 ? 'FTPS encrypts the connection with TLS. Common ports: 990 (implicit) or 21 (explicit AUTH TLS).'
                 : 'Plain FTP sends credentials in clear text. Use only on trusted networks.'}
@@ -213,53 +213,53 @@ function FtpPageInner() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Display Name</label>
-              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder={form.secure ? 'My FTPS Server' : 'My FTP Server'} className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-ink2 mb-1">Display Name</label>
+              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder={form.secure ? 'My FTPS Server' : 'My FTP Server'} className="w-full border border-ink rounded-lg px-3 py-2 text-sm bg-bg2 text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Host / IP</label>
-              <input type="text" value={form.host} onChange={e => setField('host', e.target.value)} placeholder="ftp.example.com" className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-ink2 mb-1">Host / IP</label>
+              <input type="text" value={form.host} onChange={e => setField('host', e.target.value)} placeholder="ftp.example.com" className="w-full border border-ink rounded-lg px-3 py-2 text-sm bg-bg2 text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Port</label>
-              <input type="number" value={form.port} onChange={e => setField('port', Number(e.target.value) || (form.secure ? FTPS_PORT : FTP_PORT))} placeholder={String(form.secure ? FTPS_PORT : FTP_PORT)} className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-ink2 mb-1">Port</label>
+              <input type="number" value={form.port} onChange={e => setField('port', Number(e.target.value) || (form.secure ? FTPS_PORT : FTP_PORT))} placeholder={String(form.secure ? FTPS_PORT : FTP_PORT)} className="w-full border border-ink rounded-lg px-3 py-2 text-sm bg-bg2 text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Username</label>
-              <input type="text" value={form.username} onChange={e => setField('username', e.target.value)} placeholder="ftpuser (or 'anonymous')" className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-ink2 mb-1">Username</label>
+              <input type="text" value={form.username} onChange={e => setField('username', e.target.value)} placeholder="ftpuser (or 'anonymous')" className="w-full border border-ink rounded-lg px-3 py-2 text-sm bg-bg2 text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Password</label>
-              <input type="password" value={form.password} onChange={e => setField('password', e.target.value)} placeholder={editId ? '(leave blank to keep current)' : 'password'} className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-ink2 mb-1">Password</label>
+              <input type="password" value={form.password} onChange={e => setField('password', e.target.value)} placeholder={editId ? '(leave blank to keep current)' : 'password'} className="w-full border border-ink rounded-lg px-3 py-2 text-sm bg-bg2 text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div className="flex items-end">
-              <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
-                <input type="checkbox" checked={form.passive} onChange={e => setField('passive', e.target.checked)} className="rounded border-slate-600" />
+              <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+                <input type="checkbox" checked={form.passive} onChange={e => setField('passive', e.target.checked)} className="rounded border-ink/30" />
                 Passive mode
-                <span className="text-[10px] text-slate-400">(recommended)</span>
+                <span className="text-[10px] text-mute">(recommended)</span>
               </label>
             </div>
           </div>
 
-          <div className="mt-4 p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
+          <div className="mt-4 p-3 bg-bg2/50 border border-ink rounded-lg">
             <div className="flex items-center gap-2 flex-wrap">
-              <Info className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-xs text-slate-300">Test connection — probes</span>
+              <Info className="w-3.5 h-3.5 text-mute" />
+              <span className="text-xs text-ink2">Test connection — probes</span>
               <input
                 type="text"
                 value={formTestShare}
                 onChange={e => setFormTestShare(e.target.value)}
                 placeholder="/"
-                className="text-xs font-mono border border-slate-700 rounded px-2 py-1 bg-slate-900 text-slate-100 placeholder-slate-500 w-32 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-slate-800"
+                className="text-xs font-mono border border-ink rounded px-2 py-1 bg-bg2 text-ink placeholder-mute w-32 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-paper"
               />
-              <button onClick={handleFormTest} disabled={formTesting || !form.host || !form.username} className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+              <button onClick={handleFormTest} disabled={formTesting || !form.host || !form.username} className="flex items-center gap-1.5 bg-bg2 hover:bg-line disabled:bg-line text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
                 {formTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
                 {formTesting ? 'Testing...' : 'Test Connection'}
               </button>
             </div>
 
             {formTestResult && (
-              <div className={`mt-2 p-2.5 rounded-lg border text-xs ${formTestResult.success ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
+              <div className={`mt-2 p-2.5 rounded-lg border text-xs ${formTestResult.success ? 'bg-retro-mint/30 border-ink/40 text-ink' : 'bg-retro-coral/20 border-retro-coral text-retro-coral'}`}>
                 <div className="flex items-start gap-2">
                   {formTestResult.success ? <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /> : <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />}
                   <div className="flex-1 min-w-0">
@@ -279,23 +279,23 @@ function FtpPageInner() {
           </div>
 
           {saveError && (
-            <div className="mt-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-300 flex items-start gap-2">
+            <div className="mt-3 p-2.5 bg-retro-coral/20 border border-retro-coral rounded-lg text-xs text-retro-coral flex items-start gap-2">
               <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{saveError}</span>
             </div>
           )}
 
           <div className="flex gap-2 mt-4">
-            <button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+            <button onClick={handleSave} disabled={saving} className="bg-ink hover:bg-ink2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
               {saving ? 'Saving...' : editId ? 'Update' : 'Create'}
             </button>
-            <button onClick={() => setShowForm(false)} className="text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition-colors">Cancel</button>
+            <button onClick={() => setShowForm(false)} className="text-ink2 px-4 py-2 rounded-lg text-sm hover:bg-bg2 transition-colors">Cancel</button>
           </div>
         </div>
       )}
 
       {visibleServers.length === 0 ? (
-        <div className="text-center py-16 text-slate-400">
+        <div className="text-center py-16 text-mute">
           <Server className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>
             {typeFilter === 'ftps' ? 'No FTPS servers configured yet.'
@@ -308,34 +308,34 @@ function FtpPageInner() {
           {visibleServers.map(srv => {
             const result = testResults[srv.id]
             return (
-              <div key={srv.id} className="bg-slate-800 border border-slate-700 rounded-xl shadow-sm overflow-hidden">
+              <div key={srv.id} className="bg-paper border-[1.5px] border-ink rounded-2xl shadow-hard-sm overflow-hidden">
                 <div className="p-4 flex items-center gap-4">
                   {srv.secure
-                    ? <Lock className="w-8 h-8 text-green-500 flex-shrink-0" />
-                    : <Server className="w-8 h-8 text-amber-500 flex-shrink-0" />}
+                    ? <Lock className="w-8 h-8 text-ink flex-shrink-0" />
+                    : <Server className="w-8 h-8 text-ink flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-slate-100">{srv.name}</p>
+                      <p className="font-semibold text-ink">{srv.name}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${
-                        srv.secure ? 'bg-green-500/20 text-green-300' : 'bg-amber-500/20 text-amber-300'
+                        srv.secure ? 'bg-retro-mint text-ink' : 'bg-retro-lemon text-ink'
                       }`}>
                         {srv.secure ? <><Lock className="w-3 h-3" />FTPS</> : 'FTP'}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-500 font-mono">{srv.username}@{srv.host}:{srv.port}</p>
-                    <p className="text-xs text-slate-400">{srv.passive ? 'Passive' : 'Active'} mode</p>
+                    <p className="text-sm text-mute font-mono">{srv.username}@{srv.host}:{srv.port}</p>
+                    <p className="text-xs text-mute">{srv.passive ? 'Passive' : 'Active'} mode</p>
                   </div>
 
-                  <button onClick={() => handleServerTest(srv.id)} disabled={testing === srv.id} className="flex items-center gap-1.5 text-xs border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-300">
+                  <button onClick={() => handleServerTest(srv.id)} disabled={testing === srv.id} className="flex items-center gap-1.5 text-xs border border-ink px-3 py-1.5 rounded-lg hover:bg-bg2/50 transition-colors text-ink2">
                     {testing === srv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
                     {testing === srv.id ? 'Testing...' : 'Test'}
                   </button>
-                  <button onClick={() => startEdit(srv)} className="text-slate-400 hover:text-blue-400 transition-colors p-1"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => handleDelete(srv.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => startEdit(srv)} className="text-mute hover:text-ink transition-colors p-1"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => handleDelete(srv.id)} className="text-mute hover:text-retro-coral transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
                 </div>
 
                 {result && (
-                  <div className={`border-t px-4 py-3 text-xs ${result.success ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
+                  <div className={`border-t px-4 py-3 text-xs ${result.success ? 'bg-retro-mint/30 border-ink/40 text-ink' : 'bg-retro-coral/20 border-retro-coral text-retro-coral'}`}>
                     <div className="flex items-start gap-2">
                       {result.success ? <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /> : <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />}
                       <div className="flex-1 min-w-0">
@@ -363,7 +363,7 @@ function FtpPageInner() {
 
 export default function FtpPage() {
   return (
-    <Suspense fallback={<div className="text-center py-16 text-slate-400">Loading...</div>}>
+    <Suspense fallback={<div className="text-center py-16 text-mute">Loading...</div>}>
       <FtpPageInner />
     </Suspense>
   )

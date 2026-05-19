@@ -2,31 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Retroconsole1981 — warm parchment + candy accents */
 :root {
-  --foreground-rgb: 226, 232, 240;
-  --background-rgb: 2, 6, 23;
+  --bg: #f4f1e8;
+  --bg-2: #ebe6d6;
+  --paper: #fdfbf3;
+  --ink: #0d1117;
+  --ink-2: #3d4654;
+  --mute: #6b7484;
+  --line: #d9d2bd;
+
+  --lime: #c4ec38;
+  --sky: #5bcaff;
+  --coral: #ff6b4a;
+  --lemon: #ffd23f;
+  --mint: #86d9a8;
+  --grape: #b08cff;
+
+  --shadow-hard: 4px 4px 0 0 var(--ink);
+  --shadow-hard-lg: 8px 8px 0 0 var(--ink);
 }
 
 html, body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
-  color-scheme: dark;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  color-scheme: light;
+}
+
+body {
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
+  background: var(--lime);
+  color: var(--ink);
 }
 
-/* Form controls — dark-mode friendly */
-input, textarea, select {
-  color-scheme: dark;
-}
-
-/* Scrollbars */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: rgb(15, 23, 42); }
-::-webkit-scrollbar-thumb { background: rgb(51, 65, 85); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: rgb(71, 85, 105); }
+::-webkit-scrollbar-track { background: var(--bg-2); }
+::-webkit-scrollbar-thumb { background: var(--ink); border-radius: 0; }
+
+/* Display font helper */
+.font-display {
+  font-family: 'Bricolage Grotesque', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.font-mono, .mono {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.01em;
+}
+
+/* Chunky button/card hover lift */
+.btn-retro {
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn-retro:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.card-retro {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.card-retro:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+/* Highlight swatch (used on display headings) */
+.swatch {
+  display: inline-block;
+  padding: 0 14px;
+  border-radius: 14px;
+  transform: rotate(-1.5deg);
+}
+.swatch.coral { transform: rotate(1.2deg); color: #fff; }
 
 @layer utilities {
   .text-balance { text-wrap: balance; }

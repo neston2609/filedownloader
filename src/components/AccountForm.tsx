@@ -69,62 +69,62 @@ export function AccountForm({ user }: AccountFormProps) {
   return (
     <div className="space-y-6">
       {/* Profile details */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-        <h2 className="font-semibold text-slate-100 mb-4 flex items-center gap-2">
-          <User className="w-4 h-4 text-blue-400" />
+      <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-6">
+        <h2 className="font-semibold text-ink mb-4 flex items-center gap-2">
+          <User className="w-4 h-4 text-ink" />
           Profile Details
         </h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <div>
-            <dt className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5"><User className="w-3 h-3" />Username</dt>
-            <dd className="text-slate-200 font-medium mt-0.5">{user.username}</dd>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><User className="w-3 h-3" />Username</dt>
+            <dd className="text-ink font-medium mt-0.5">{user.username}</dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5"><Mail className="w-3 h-3" />Email</dt>
-            <dd className="text-slate-200 font-medium mt-0.5">{user.email}</dd>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Mail className="w-3 h-3" />Email</dt>
+            <dd className="text-ink font-medium mt-0.5">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5"><Shield className="w-3 h-3" />Role</dt>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Shield className="w-3 h-3" />Role</dt>
             <dd className="mt-0.5">
               {user.role === 'ADMIN' ? (
-                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-medium">Administrator</span>
+                <span className="text-xs bg-retro-lemon text-ink px-2 py-0.5 rounded font-medium">Administrator</span>
               ) : (
-                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-medium">Member</span>
+                <span className="text-xs bg-bg2 text-ink2 px-2 py-0.5 rounded font-medium">Member</span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5"><CreditCard className="w-3 h-3" />Payment Status</dt>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><CreditCard className="w-3 h-3" />Payment Status</dt>
             <dd className="mt-0.5">
               <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                user.paymentStatus === 'paid' ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-300'
+                user.paymentStatus === 'paid' ? 'bg-retro-mint text-ink' : 'bg-bg2 text-ink2'
               }`}>{user.paymentStatus}</span>
             </dd>
           </div>
           <div className="sm:col-span-2">
-            <dt className="text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-3 h-3" />Member Since</dt>
-            <dd className="text-slate-200 mt-0.5">{formatDate(user.createdAt)}</dd>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-3 h-3" />Member Since</dt>
+            <dd className="text-ink mt-0.5">{formatDate(user.createdAt)}</dd>
           </div>
         </dl>
       </div>
 
       {/* Change password */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-        <h2 className="font-semibold text-slate-100 mb-1 flex items-center gap-2">
-          <Lock className="w-4 h-4 text-blue-400" />
+      <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-6">
+        <h2 className="font-semibold text-ink mb-1 flex items-center gap-2">
+          <Lock className="w-4 h-4 text-ink" />
           Change Password
         </h2>
-        <p className="text-sm text-slate-400 mb-4">After updating, you&apos;ll be signed out and asked to log in with your new password.</p>
+        <p className="text-sm text-mute mb-4">After updating, you&apos;ll be signed out and asked to log in with your new password.</p>
 
         {success && (
-          <div className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-4 text-green-300 text-sm">
+          <div className="flex items-start gap-2 bg-retro-mint/30 border border-ink/40 rounded-lg p-3 mb-4 text-ink text-sm">
             <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>Password updated. Signing you out…</span>
           </div>
         )}
 
         {error && (
-          <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 text-red-300 text-sm">
+          <div className="flex items-start gap-2 bg-retro-coral/20 border border-retro-coral rounded-lg p-3 mb-4 text-retro-coral text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -159,7 +159,7 @@ export function AccountForm({ user }: AccountFormProps) {
           <button
             type="submit"
             disabled={saving || success}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:text-slate-400 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors"
+            className="flex items-center gap-2 bg-ink hover:bg-ink2 disabled:bg-line disabled:text-mute text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors"
           >
             {saving ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -186,21 +186,21 @@ function PasswordField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-slate-300 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-ink2 mb-1.5">{label}</label>
       <div className="relative">
-        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mute" />
         <input
           type={show ? 'text' : 'password'}
           required
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoComplete={autoComplete}
-          className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 pl-10 pr-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="w-full bg-bg2 border border-ink rounded-lg py-2.5 pl-10 pr-10 text-sm text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-mute hover:text-ink2 transition-colors"
         >
           {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>

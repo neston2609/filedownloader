@@ -7,7 +7,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   if (!session) redirect('/login')
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-bg">
       <NavBar user={{ name: session.user?.name ?? '', role: session.user?.role ?? 'MEMBER' }} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}

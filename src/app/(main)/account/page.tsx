@@ -16,8 +16,8 @@ export default async function AccountPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-3xl font-bold text-slate-100 mb-2">My Account</h1>
-      <p className="text-slate-400 mb-8">Update your password and review account details.</p>
+      <h1 className="text-3xl font-bold text-ink mb-2">My Account</h1>
+      <p className="text-mute mb-8">Update your password and review account details.</p>
 
       <AccountForm user={{
         email: user.email,
