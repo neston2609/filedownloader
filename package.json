@@ -10,7 +10,7 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "db:seed": "ts-node --project tsconfig.json prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@marsaud/smb2": "^0.18.0",
@@ -34,6 +34,6 @@
     "typescript": "^6.0.3"
   },
   "prisma": {
-    "seed": "ts-node --project tsconfig.json prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   }
 }

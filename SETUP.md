@@ -20,6 +20,7 @@ npx prisma db push
 
 ## 3. Seed Initial Admin Account
 ```bash
+npm install -D tsx     # one-time, if not already installed
 npx prisma db seed
 ```
 Default admin: `admin@securefiles.local` / `Admin@1234`
