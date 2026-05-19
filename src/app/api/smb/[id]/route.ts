@@ -13,14 +13,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = await req.json()
   const { name, host, port, username, password, domain } = body
 
+  let portNum: number | undefined
+  if (port !== undefined && port !== '') {
+    portNum = Number(port)
+    if (Number.isNaN(portNum)) {
+      return NextResponse.json({ error: 'port must be a number' }, { status: 400 })
+    }
+  }
+
   const server = await prisma.smbServer.update({
     where: { id: params.id },
     data: {
       ...(name !== undefined && { name }),
       ...(host !== undefined && { host }),
-      ...(port !== undefined && { port }),
+      ...(portNum !== undefined && { port: portNum }),
       ...(username !== undefined && { username }),
-      ...(password !== undefined && { password }),
+      ...(password && { password }),
       ...(domain !== undefined && { domain }),
     },
     select: { id: true, name: true, host: true, port: true, username: true, domain: true },

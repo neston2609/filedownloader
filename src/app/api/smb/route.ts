@@ -26,8 +26,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'name, host, username, password required' }, { status: 400 })
   }
 
+  const portNum = port === undefined || port === '' ? 445 : Number(port)
+  if (Number.isNaN(portNum)) {
+    return NextResponse.json({ error: 'port must be a number' }, { status: 400 })
+  }
+
   const server = await prisma.smbServer.create({
-    data: { name, host, port: port ?? 445, username, password, domain: domain ?? '' },
+    data: { name, host, port: portNum, username, password, domain: domain ?? '' },
     select: { id: true, name: true, host: true, port: true, username: true, domain: true },
   })
 
