@@ -55,6 +55,18 @@ async function withClient<T>(cfg: FtpConfig, fn: (client: Client) => Promise<T>)
   }
 }
 
+// Walk to `target` one CWD at a time instead of passing the full path to
+// LIST. Many FTP servers (Pure-FTPd, vsftpd default) treat the LIST argument
+// as a glob, so a path containing brackets like "[Thai Subtitle]" becomes a
+// character class and matches nothing. CWD handles literal names.
+async function cwdInto(client: Client, target: string): Promise<void> {
+  await client.cd('/')
+  const parts = target.split('/').filter(Boolean)
+  for (const part of parts) {
+    await client.cd(part)
+  }
+}
+
 export async function listFtpDirectory(
   host: string,
   port: number,
@@ -67,7 +79,9 @@ export async function listFtpDirectory(
   const full = joinPath(basePath, subPath)
 
   return withClient({ host, port, username, password, secure }, async (client) => {
-    const list: FileInfo[] = await client.list(full)
+    await cwdInto(client, full)
+    // No path arg — list whatever directory we just CWD'd into.
+    const list: FileInfo[] = await client.list()
     const filtered = list
       .filter((f) => f.name !== '.' && f.name !== '..')
       .map((f) => ({
@@ -78,7 +92,7 @@ export async function listFtpDirectory(
       }))
 
     if (filtered.length === 0) {
-      console.warn(`[FTP] list("${full}") returned 0 entries (basePath="${basePath}", subPath="${subPath}")`)
+      console.warn(`[FTP] CWD ${full} then LIST returned 0 entries (basePath="${basePath}", subPath="${subPath}")`)
     } else {
       console.log(`[FTP] listed ${filtered.length} entries in ${full}`)
     }
@@ -98,7 +112,13 @@ export async function streamFtpFile(
   const full = joinPath(basePath, filePath)
   const pass = new PassThrough()
 
-  // Fire-and-forget the download; pipe into the PassThrough
+  // Split the path: navigate via CWD per segment, then RETR just the filename.
+  // Avoids the bracket-as-glob trap on servers that treat path arguments as
+  // patterns.
+  const lastSlash = full.lastIndexOf('/')
+  const dir = lastSlash > 0 ? full.slice(0, lastSlash) : '/'
+  const file = full.slice(lastSlash + 1)
+
   ;(async () => {
     const client = new Client(15000)
     client.ftp.verbose = false
@@ -107,7 +127,8 @@ export async function streamFtpFile(
         host, port, user: username, password, secure,
         secureOptions: { rejectUnauthorized: false },
       })
-      await client.downloadTo(pass, full)
+      await cwdInto(client, dir)
+      await client.downloadTo(pass, file)
     } catch (err) {
       pass.destroy(err instanceof Error ? err : new Error('FTP download failed'))
     } finally {

@@ -34,22 +34,31 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
-    // Explicit cascade for DownloadLog (no FK cascade until next prisma db push).
-    // The Category*Path and UserCategoryAccess tables already cascade via the schema,
-    // but wiping them inside the same transaction makes this resilient to schema drift.
-    await prisma.$transaction([
-      prisma.downloadLog.deleteMany({ where: { categoryId: params.id } }),
-      prisma.userCategoryAccess.deleteMany({ where: { categoryId: params.id } }),
-      prisma.categorySmbPath.deleteMany({ where: { categoryId: params.id } }),
-      prisma.categoryFtpPath.deleteMany({ where: { categoryId: params.id } }),
-      prisma.categoryScpPath.deleteMany({ where: { categoryId: params.id } }),
-      prisma.category.delete({ where: { id: params.id } }),
-    ])
+    // Interactive transaction so all deletes run in one DB session. The path
+    // tables already cascade via schema, but we delete them explicitly to
+    // stay correct on installs that haven't run `prisma db push` yet.
+    //
+    // DownloadLog wipe happens TWICE — once early, once immediately before
+    // category.delete — to shrink the race window where a new download log
+    // gets inserted mid-transaction. The schema cascade (add via
+    // `prisma db push`) is the real long-term fix.
+    await prisma.$transaction(async (tx) => {
+      await tx.downloadLog.deleteMany({ where: { categoryId: params.id } })
+      await tx.userCategoryAccess.deleteMany({ where: { categoryId: params.id } })
+      await tx.categorySmbPath.deleteMany({ where: { categoryId: params.id } })
+      await tx.categoryFtpPath.deleteMany({ where: { categoryId: params.id } })
+      await tx.categoryScpPath.deleteMany({ where: { categoryId: params.id } })
+      // Final sweep just before the parent delete
+      await tx.downloadLog.deleteMany({ where: { categoryId: params.id } })
+      await tx.category.delete({ where: { id: params.id } })
+    }, { timeout: 15000 })
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Category delete failed:', err)
-    return NextResponse.json({
-      error: err instanceof Error ? err.message : 'Failed to delete category',
-    }, { status: 500 })
+    const message = err instanceof Error ? err.message : 'Failed to delete category'
+    const hint = message.includes('Foreign key')
+      ? ' — run `npx prisma db push` on the server to enable schema-level cascade.'
+      : ''
+    return NextResponse.json({ error: message + hint }, { status: 500 })
   }
 }
