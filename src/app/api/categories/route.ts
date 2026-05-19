@@ -10,7 +10,8 @@ export async function GET() {
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     include: {
       smbPaths: { include: { smbServer: { select: { id: true, name: true, host: true } } } },
-      ftpPaths: { include: { ftpServer: { select: { id: true, name: true, host: true } } } },
+      ftpPaths: { include: { ftpServer: { select: { id: true, name: true, host: true, secure: true } } } },
+      scpPaths: { include: { scpServer: { select: { id: true, name: true, host: true } } } },
     },
   })
 

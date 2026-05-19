@@ -53,6 +53,19 @@ model FtpServer {
   categoryPaths CategoryFtpPath[]
 }
 
+model ScpServer {
+  id         String @id @default(cuid())
+  name       String
+  host       String
+  port       Int    @default(22)
+  username   String
+  password   String @default("")
+  privateKey String @default("")
+  passphrase String @default("")
+
+  categoryPaths CategoryScpPath[]
+}
+
 model Category {
   id                   String  @id @default(cuid())
   name                 String
@@ -62,6 +75,7 @@ model Category {
 
   smbPaths     CategorySmbPath[]
   ftpPaths     CategoryFtpPath[]
+  scpPaths     CategoryScpPath[]
   userAccess   UserCategoryAccess[]
   downloadLogs DownloadLog[]
 }
@@ -84,6 +98,16 @@ model CategoryFtpPath {
 
   category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   ftpServer FtpServer @relation(fields: [ftpServerId], references: [id], onDelete: Cascade)
+}
+
+model CategoryScpPath {
+  id          String @id @default(cuid())
+  categoryId  String
+  scpServerId String
+  path        String
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  scpServer ScpServer @relation(fields: [scpServerId], references: [id], onDelete: Cascade)
 }
 
 model UserCategoryAccess {

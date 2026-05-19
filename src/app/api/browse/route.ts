@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { listSmbDirectory } from '@/lib/smb'
 import { listFtpDirectory } from '@/lib/ftp'
+import { listScpDirectory } from '@/lib/scp'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -71,6 +72,34 @@ export async function GET(req: NextRequest) {
     } catch (err) {
       console.error('FTP browse error:', err)
       return NextResponse.json({ error: (err as Error).message ?? 'FTP browse failed' }, { status: 500 })
+    }
+  }
+
+  // Try SCP
+  const scpPath = pathId
+    ? await prisma.categoryScpPath.findFirst({
+        where: { id: pathId, categoryId },
+        include: { scpServer: true },
+      })
+    : await prisma.categoryScpPath.findFirst({
+        where: { categoryId },
+        include: { scpServer: true },
+      })
+
+  if (scpPath) {
+    try {
+      const entries = await listScpDirectory(
+        {
+          host: scpPath.scpServer.host, port: scpPath.scpServer.port,
+          username: scpPath.scpServer.username, password: scpPath.scpServer.password,
+          privateKey: scpPath.scpServer.privateKey, passphrase: scpPath.scpServer.passphrase,
+        },
+        scpPath.path, subPath
+      )
+      return NextResponse.json({ entries, pathId: scpPath.id, protocol: 'scp' })
+    } catch (err) {
+      console.error('SCP browse error:', err)
+      return NextResponse.json({ error: (err as Error).message ?? 'SCP browse failed' }, { status: 500 })
     }
   }
 

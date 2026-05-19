@@ -1,10 +1,9 @@
 'use client'
-import { Suspense, useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { Server, Plus, Trash2, CheckCircle, XCircle, Pencil, X, Wifi, Loader2, Info, Lock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Terminal, Plus, Trash2, CheckCircle, XCircle, Pencil, X, Wifi, Loader2, Info, Key, KeyRound } from 'lucide-react'
 
-interface FtpServer {
-  id: string; name: string; host: string; port: number; username: string; secure: boolean; passive: boolean
+interface ScpServer {
+  id: string; name: string; host: string; port: number; username: string; hasPrivateKey: boolean
 }
 
 interface TestResult {
@@ -14,18 +13,17 @@ interface TestResult {
   details?: { code?: string | number; stack?: string }
 }
 
-const EMPTY = { name: '', host: '', port: 21, username: '', password: '', secure: false, passive: true }
-const DEFAULT_TEST_SHARE = '/'
-const FTP_PORT = 21
-const FTPS_PORT = 990
+type AuthMode = 'password' | 'key'
 
-function FtpPageInner() {
-  const searchParams = useSearchParams()
-  const typeFilter = searchParams.get('type') as 'ftp' | 'ftps' | null
-  const [servers, setServers] = useState<FtpServer[]>([])
+const EMPTY = { name: '', host: '', port: 22, username: '', password: '', privateKey: '', passphrase: '' }
+const DEFAULT_TEST_SHARE = '/'
+
+export default function ScpPage() {
+  const [servers, setServers] = useState<ScpServer[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [authMode, setAuthMode] = useState<AuthMode>('password')
   const [form, setForm] = useState({ ...EMPTY })
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -38,7 +36,7 @@ function FtpPageInner() {
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({})
 
   useEffect(() => {
-    fetch('/api/ftp').then(r => r.json()).then(setServers).finally(() => setLoading(false))
+    fetch('/api/scp').then(r => r.json()).then(setServers).finally(() => setLoading(false))
   }, [])
 
   function setField<K extends keyof typeof form>(field: K, value: typeof form[K]) {
@@ -49,10 +47,14 @@ function FtpPageInner() {
     setSaving(true)
     setSaveError(null)
     try {
-      const url = editId ? `/api/ftp/${editId}` : '/api/ftp'
+      const body = authMode === 'password'
+        ? { name: form.name, host: form.host, port: form.port, username: form.username, password: form.password, privateKey: '', passphrase: '' }
+        : { name: form.name, host: form.host, port: form.port, username: form.username, password: '', privateKey: form.privateKey, passphrase: form.passphrase }
+
+      const url = editId ? `/api/scp/${editId}` : '/api/scp'
       const method = editId ? 'PATCH' : 'POST'
       const res = await fetch(url, {
-        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
+        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -76,10 +78,16 @@ function FtpPageInner() {
     setFormTesting(true)
     setFormTestResult(null)
     try {
-      const res = await fetch('/api/ftp/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, id: editId, share: formTestShare }),
+      const body = {
+        id: editId,
+        host: form.host, port: form.port, username: form.username,
+        password: authMode === 'password' ? form.password : '',
+        privateKey: authMode === 'key' ? form.privateKey : '',
+        passphrase: authMode === 'key' ? form.passphrase : '',
+        share: formTestShare,
+      }
+      const res = await fetch('/api/scp/test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       })
       const data = await res.json()
       setFormTestResult(data)
@@ -97,7 +105,7 @@ function FtpPageInner() {
   async function handleServerTest(id: string) {
     setTesting(id)
     try {
-      const res = await fetch(`/api/ftp/${id}/test`, {
+      const res = await fetch(`/api/scp/${id}/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ share: DEFAULT_TEST_SHARE }),
@@ -115,15 +123,16 @@ function FtpPageInner() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this FTP server?')) return
-    await fetch(`/api/ftp/${id}`, { method: 'DELETE' })
+    if (!confirm('Delete this SCP / SFTP server?')) return
+    await fetch(`/api/scp/${id}`, { method: 'DELETE' })
     setServers(s => s.filter(srv => srv.id !== id))
     setTestResults(r => { const c = { ...r }; delete c[id]; return c })
   }
 
-  function startEdit(srv: FtpServer) {
+  function startEdit(srv: ScpServer) {
     setEditId(srv.id)
-    setForm({ name: srv.name, host: srv.host, port: srv.port, username: srv.username, password: '', secure: srv.secure, passive: srv.passive })
+    setForm({ name: srv.name, host: srv.host, port: srv.port, username: srv.username, password: '', privateKey: '', passphrase: '' })
+    setAuthMode(srv.hasPrivateKey ? 'key' : 'password')
     setShowForm(true)
     setFormTestResult(null)
     setSaveError(null)
@@ -133,124 +142,116 @@ function FtpPageInner() {
     setShowForm(true)
     setEditId(null)
     setForm({ ...EMPTY })
+    setAuthMode('password')
     setFormTestResult(null)
     setSaveError(null)
   }
 
   if (loading) return <div className="text-center py-16 text-slate-400">Loading...</div>
 
-  const visibleServers = typeFilter === 'ftp'
-    ? servers.filter(s => !s.secure)
-    : typeFilter === 'ftps'
-    ? servers.filter(s => s.secure)
-    : servers
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">
-          {typeFilter === 'ftp' ? 'FTP Servers' : typeFilter === 'ftps' ? 'FTPS Servers' : 'FTP / FTPS Servers'}
-        </h1>
+        <h1 className="text-3xl font-bold text-slate-900">SCP / SFTP Servers</h1>
         <button onClick={startNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           <Plus className="w-4 h-4" /> Add Server
         </button>
       </div>
 
-      {typeFilter && (
-        <div className="mb-4 text-xs text-slate-500 flex items-center gap-2">
-          <Info className="w-3.5 h-3.5" />
-          Showing {typeFilter === 'ftps' ? 'TLS-encrypted FTPS' : 'plain FTP'} servers only.
-          <a href="/admin/ftp" className="text-blue-600 hover:underline">View all</a>
-        </div>
-      )}
-
       {showForm && (
         <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-900">{editId ? 'Edit Server' : 'New FTP Server'}</h2>
+            <h2 className="font-semibold text-slate-900">{editId ? 'Edit Server' : 'New SCP / SFTP Server'}</h2>
             <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600">
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Protocol selector */}
+          {/* Auth mode selector */}
           <div className="mb-4">
-            <label className="block text-xs font-medium text-slate-600 mb-1.5">Protocol</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Authentication</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setForm(f => ({ ...f, secure: false, port: f.port === FTPS_PORT ? FTP_PORT : f.port }))}
+                onClick={() => setAuthMode('password')}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
-                  !form.secure
+                  authMode === 'password'
                     ? 'bg-blue-50 border-blue-500 text-blue-700'
                     : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'
                 }`}
               >
-                <Server className="w-4 h-4" />
-                FTP
-                <span className="text-[10px] opacity-75">(unencrypted)</span>
+                <Key className="w-4 h-4" />
+                Password
               </button>
               <button
                 type="button"
-                onClick={() => setForm(f => ({ ...f, secure: true, port: f.port === FTP_PORT ? FTPS_PORT : f.port }))}
+                onClick={() => setAuthMode('key')}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
-                  form.secure
-                    ? 'bg-green-50 border-green-500 text-green-700'
+                  authMode === 'key'
+                    ? 'bg-purple-50 border-purple-500 text-purple-700'
                     : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'
                 }`}
               >
-                <Lock className="w-4 h-4" />
-                FTPS
-                <span className="text-[10px] opacity-75">(TLS-encrypted)</span>
+                <KeyRound className="w-4 h-4" />
+                Private Key
               </button>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1.5">
-              {form.secure
-                ? 'FTPS encrypts the connection with TLS. Common ports: 990 (implicit) or 21 (explicit AUTH TLS).'
-                : 'Plain FTP sends credentials in clear text. Use only on trusted networks.'}
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Display Name</label>
-              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder={form.secure ? 'My FTPS Server' : 'My FTP Server'} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="My SCP Server" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Host / IP</label>
-              <input type="text" value={form.host} onChange={e => setField('host', e.target.value)} placeholder="ftp.example.com" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input type="text" value={form.host} onChange={e => setField('host', e.target.value)} placeholder="ssh.example.com" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Port</label>
-              <input type="number" value={form.port} onChange={e => setField('port', Number(e.target.value) || (form.secure ? FTPS_PORT : FTP_PORT))} placeholder={String(form.secure ? FTPS_PORT : FTP_PORT)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input type="number" value={form.port} onChange={e => setField('port', Number(e.target.value) || 22)} placeholder="22" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Username</label>
-              <input type="text" value={form.username} onChange={e => setField('username', e.target.value)} placeholder="ftpuser (or 'anonymous')" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input type="text" value={form.username} onChange={e => setField('username', e.target.value)} placeholder="ssh-user" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
-              <input type="password" value={form.password} onChange={e => setField('password', e.target.value)} placeholder={editId ? '(leave blank to keep current)' : 'password'} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
-            </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                <input type="checkbox" checked={form.passive} onChange={e => setField('passive', e.target.checked)} className="rounded border-slate-300" />
-                Passive mode
-                <span className="text-[10px] text-slate-400">(recommended)</span>
-              </label>
-            </div>
+
+            {authMode === 'password' ? (
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
+                <input type="password" value={form.password} onChange={e => setField('password', e.target.value)} placeholder={editId ? '(leave blank to keep current)' : 'password'} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              </div>
+            ) : (
+              <>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Private Key (OpenSSH format)</label>
+                  <textarea
+                    value={form.privateKey}
+                    onChange={e => setField('privateKey', e.target.value)}
+                    placeholder={editId ? '(leave blank to keep current)\n-----BEGIN OPENSSH PRIVATE KEY-----\n...' : '-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----'}
+                    rows={6}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-400 resize-y"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Passphrase (optional)</label>
+                  <input type="password" value={form.passphrase} onChange={e => setField('passphrase', e.target.value)} placeholder="passphrase for the private key (if any)" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                </div>
+              </>
+            )}
           </div>
 
+          {/* Test connection panel */}
           <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
             <div className="flex items-center gap-2 flex-wrap">
               <Info className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-xs text-slate-600">Test connection — probes</span>
+              <span className="text-xs text-slate-600">Test SSH connection — probes</span>
               <input
                 type="text"
                 value={formTestShare}
                 onChange={e => setFormTestShare(e.target.value)}
-                placeholder="/"
-                className="text-xs font-mono border border-slate-200 rounded px-2 py-1 w-32 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                placeholder="/home/user"
+                className="text-xs font-mono border border-slate-200 rounded px-2 py-1 w-40 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
               />
               <button onClick={handleFormTest} disabled={formTesting || !form.host || !form.username} className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
                 {formTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
@@ -294,36 +295,36 @@ function FtpPageInner() {
         </div>
       )}
 
-      {visibleServers.length === 0 ? (
+      {servers.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
-          <Server className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>
-            {typeFilter === 'ftps' ? 'No FTPS servers configured yet.'
-              : typeFilter === 'ftp' ? 'No plain FTP servers configured yet.'
-              : 'No FTP / FTPS servers configured yet.'}
-          </p>
+          <Terminal className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>No SCP / SFTP servers configured yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {visibleServers.map(srv => {
+          {servers.map(srv => {
             const result = testResults[srv.id]
             return (
               <div key={srv.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="p-4 flex items-center gap-4">
-                  {srv.secure
-                    ? <Lock className="w-8 h-8 text-green-500 flex-shrink-0" />
-                    : <Server className="w-8 h-8 text-amber-500 flex-shrink-0" />}
+                  <Terminal className="w-8 h-8 text-purple-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-900">{srv.name}</p>
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${
-                        srv.secure ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {srv.secure ? <><Lock className="w-3 h-3" />FTPS</> : 'FTP'}
+                      <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                        <Terminal className="w-3 h-3" />SCP/SFTP
                       </span>
+                      {srv.hasPrivateKey ? (
+                        <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <KeyRound className="w-3 h-3" />Key auth
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Key className="w-3 h-3" />Password auth
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-slate-500 font-mono">{srv.username}@{srv.host}:{srv.port}</p>
-                    <p className="text-xs text-slate-400">{srv.passive ? 'Passive' : 'Active'} mode</p>
                   </div>
 
                   <button onClick={() => handleServerTest(srv.id)} disabled={testing === srv.id} className="flex items-center gap-1.5 text-xs border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors text-slate-600">
@@ -358,13 +359,5 @@ function FtpPageInner() {
         </div>
       )}
     </div>
-  )
-}
-
-export default function FtpPage() {
-  return (
-    <Suspense fallback={<div className="text-center py-16 text-slate-400">Loading...</div>}>
-      <FtpPageInner />
-    </Suspense>
   )
 }

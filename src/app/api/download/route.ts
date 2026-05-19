@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { streamSmbFile } from '@/lib/smb'
 import { streamFtpFile } from '@/lib/ftp'
+import { streamScpFile } from '@/lib/scp'
 import path from 'path'
 
 export async function GET(req: NextRequest) {
@@ -96,6 +97,36 @@ export async function GET(req: NextRequest) {
     } catch (err) {
       console.error('FTP download error:', err)
       return NextResponse.json({ error: 'FTP download failed' }, { status: 500 })
+    }
+  }
+
+  // SCP path?
+  const scpPath = await prisma.categoryScpPath.findFirst({
+    where: { id: pathId, categoryId },
+    include: { scpServer: true },
+  })
+
+  if (scpPath) {
+    try {
+      const stream = await streamScpFile(
+        {
+          host: scpPath.scpServer.host, port: scpPath.scpServer.port,
+          username: scpPath.scpServer.username, password: scpPath.scpServer.password,
+          privateKey: scpPath.scpServer.privateKey, passphrase: scpPath.scpServer.passphrase,
+        },
+        scpPath.path, filePath
+      )
+      const webStream = new ReadableStream({
+        start(controller) {
+          stream.on('data', (chunk: Buffer) => controller.enqueue(chunk))
+          stream.on('end', () => controller.close())
+          stream.on('error', (err: Error) => controller.error(err))
+        },
+      })
+      return new NextResponse(webStream, { headers })
+    } catch (err) {
+      console.error('SCP download error:', err)
+      return NextResponse.json({ error: 'SCP download failed' }, { status: 500 })
     }
   }
 

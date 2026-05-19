@@ -1,14 +1,16 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal } from 'lucide-react'
 
 interface FileServer { id: string; name: string; host: string }
 interface FtpServerFull extends FileServer { secure: boolean }
+interface ScpServer { id: string; name: string; host: string; hasPrivateKey: boolean }
 interface SmbPath { id: string; path: string; smbServer: FileServer }
 interface FtpPath { id: string; path: string; ftpServer: FtpServerFull }
+interface ScpPath { id: string; path: string; scpServer: FileServer }
 interface Category {
   id: string; name: string; description: string; affiliateLinkOverride: string | null
-  sortOrder: number; smbPaths: SmbPath[]; ftpPaths: FtpPath[]
+  sortOrder: number; smbPaths: SmbPath[]; ftpPaths: FtpPath[]; scpPaths: ScpPath[]
 }
 
 const EMPTY_CAT = { name: '', description: '', affiliateLinkOverride: '', sortOrder: 0 }
@@ -17,6 +19,7 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [smbServers, setSmbServers] = useState<FileServer[]>([])
   const [ftpServers, setFtpServers] = useState<FtpServerFull[]>([])
+  const [scpServers, setScpServers] = useState<ScpServer[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -24,7 +27,7 @@ export default function CategoriesPage() {
   const [saving, setSaving] = useState(false)
   const [expandedCat, setExpandedCat] = useState<string | null>(null)
   const [addingPath, setAddingPath] = useState<string | null>(null)
-  type Protocol = 'smb' | 'ftp' | 'ftps'
+  type Protocol = 'smb' | 'ftp' | 'ftps' | 'scp'
   const [pathForm, setPathForm] = useState<{ protocol: Protocol; serverId: string; path: string }>({ protocol: 'smb', serverId: '', path: '' })
 
   useEffect(() => {
@@ -32,10 +35,12 @@ export default function CategoriesPage() {
       fetch('/api/categories').then(r => r.json()),
       fetch('/api/smb').then(r => r.json()),
       fetch('/api/ftp').then(r => r.json()),
-    ]).then(([cats, smb, ftp]) => {
+      fetch('/api/scp').then(r => r.json()),
+    ]).then(([cats, smb, ftp, scp]) => {
       setCategories(cats)
       setSmbServers(smb)
       setFtpServers(ftp)
+      setScpServers(scp)
     }).finally(() => setLoading(false))
   }, [])
 
@@ -84,14 +89,18 @@ export default function CategoriesPage() {
   async function addPath(catId: string) {
     if (!pathForm.serverId || !pathForm.path) return
 
-    const isSmb = pathForm.protocol === 'smb'
-    const endpoint = isSmb
-      ? `/api/categories/${catId}/paths`
-      : `/api/categories/${catId}/ftp-paths`
-
-    const body = isSmb
-      ? { smbServerId: pathForm.serverId, path: pathForm.path }
-      : { ftpServerId: pathForm.serverId, path: pathForm.path }
+    let endpoint = ''
+    let body: Record<string, string> = {}
+    if (pathForm.protocol === 'smb') {
+      endpoint = `/api/categories/${catId}/paths`
+      body = { smbServerId: pathForm.serverId, path: pathForm.path }
+    } else if (pathForm.protocol === 'scp') {
+      endpoint = `/api/categories/${catId}/scp-paths`
+      body = { scpServerId: pathForm.serverId, path: pathForm.path }
+    } else {
+      endpoint = `/api/categories/${catId}/ftp-paths`
+      body = { ftpServerId: pathForm.serverId, path: pathForm.path }
+    }
 
     const res = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -103,9 +112,11 @@ export default function CategoriesPage() {
     }
   }
 
-  async function deletePath(catId: string, pathId: string, isSmbPath: boolean) {
-    const endpoint = isSmbPath
+  async function deletePath(catId: string, pathId: string, kind: 'smb' | 'ftp' | 'scp') {
+    const endpoint = kind === 'smb'
       ? `/api/categories/${catId}/paths`
+      : kind === 'scp'
+      ? `/api/categories/${catId}/scp-paths`
       : `/api/categories/${catId}/ftp-paths`
 
     await fetch(endpoint, {
@@ -123,12 +134,26 @@ export default function CategoriesPage() {
   const availableServers: FileServer[] =
     pathForm.protocol === 'smb' ? smbServers
     : pathForm.protocol === 'ftps' ? ftpServers.filter(s => s.secure)
+    : pathForm.protocol === 'scp' ? scpServers
     : ftpServers.filter(s => !s.secure)
 
   const protocolHelp =
     pathForm.protocol === 'smb' ? 'Use SMB for Windows shares. Format: \\share\\folder'
     : pathForm.protocol === 'ftps' ? 'FTPS = FTP over TLS. Pick a server flagged with FTPS.'
+    : pathForm.protocol === 'scp' ? 'SCP / SFTP over SSH. Format: /absolute/path/to/folder'
     : 'Plain FTP (unencrypted). Pick an FTP-only server.'
+
+  const protocolAdminPath =
+    pathForm.protocol === 'smb' ? '/admin/smb'
+    : pathForm.protocol === 'scp' ? '/admin/scp'
+    : pathForm.protocol === 'ftps' ? '/admin/ftp?type=ftps'
+    : '/admin/ftp?type=ftp'
+
+  const protocolAdminLabel =
+    pathForm.protocol === 'smb' ? 'SMB Servers'
+    : pathForm.protocol === 'scp' ? 'SCP / SFTP Servers'
+    : pathForm.protocol === 'ftps' ? 'FTPS Servers'
+    : 'FTP Servers'
 
   if (loading) return <div className="text-center py-16 text-slate-400">Loading...</div>
 
@@ -189,7 +214,8 @@ export default function CategoriesPage() {
           {categories.map(cat => {
             const ftpsCount = cat.ftpPaths.filter(p => p.ftpServer.secure).length
             const ftpCount = cat.ftpPaths.length - ftpsCount
-            const totalPaths = cat.smbPaths.length + cat.ftpPaths.length
+            const scpCount = cat.scpPaths.length
+            const totalPaths = cat.smbPaths.length + cat.ftpPaths.length + scpCount
             return (
               <div key={cat.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="flex items-center gap-4 p-4">
@@ -210,6 +236,7 @@ export default function CategoriesPage() {
                         {cat.smbPaths.length > 0 && ` · ${cat.smbPaths.length} SMB`}
                         {ftpCount > 0 && ` · ${ftpCount} FTP`}
                         {ftpsCount > 0 && ` · ${ftpsCount} FTPS`}
+                        {scpCount > 0 && ` · ${scpCount} SCP`}
                       </span>
                       {cat.affiliateLinkOverride && (
                         <span className="text-xs text-blue-500 flex items-center gap-1"><Link2 className="w-3 h-3" />Custom affiliate</span>
@@ -236,7 +263,7 @@ export default function CategoriesPage() {
                           <span className="font-medium text-slate-700">{p.smbServer.name}</span>
                           <span className="text-slate-400">→</span>
                           <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
-                          <button onClick={() => deletePath(cat.id, p.id, true)} className="text-slate-300 hover:text-red-500 transition-colors">
+                          <button onClick={() => deletePath(cat.id, p.id, 'smb')} className="text-slate-300 hover:text-red-500 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -256,12 +283,24 @@ export default function CategoriesPage() {
                             <span className="font-medium text-slate-700">{p.ftpServer.name}</span>
                             <span className="text-slate-400">→</span>
                             <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
-                            <button onClick={() => deletePath(cat.id, p.id, false)} className="text-slate-300 hover:text-red-500 transition-colors">
+                            <button onClick={() => deletePath(cat.id, p.id, 'ftp')} className="text-slate-300 hover:text-red-500 transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         )
                       })}
+                      {cat.scpPaths.map(p => (
+                        <div key={p.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                          <Terminal className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                          <span className="text-[10px] font-bold uppercase bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">SCP</span>
+                          <span className="font-medium text-slate-700">{p.scpServer.name}</span>
+                          <span className="text-slate-400">→</span>
+                          <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
+                          <button onClick={() => deletePath(cat.id, p.id, 'scp')} className="text-slate-300 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
 
                     {totalPaths === 0 && (
@@ -282,6 +321,7 @@ export default function CategoriesPage() {
                             <option value="smb">📁 SMB (Windows share)</option>
                             <option value="ftp">🌐 FTP (unencrypted)</option>
                             <option value="ftps">🔒 FTPS (TLS-encrypted)</option>
+                            <option value="scp">💻 SCP / SFTP (over SSH)</option>
                           </select>
                           <select
                             value={pathForm.serverId}
@@ -299,7 +339,7 @@ export default function CategoriesPage() {
                             type="text"
                             value={pathForm.path}
                             onChange={e => setPathForm(f => ({ ...f, path: e.target.value }))}
-                            placeholder={pathForm.protocol === 'smb' ? '\\share\\folder' : '/folder/subfolder'}
+                            placeholder={pathForm.protocol === 'smb' ? '\\share\\folder' : pathForm.protocol === 'scp' ? '/home/user/files' : '/folder/subfolder'}
                             className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[160px] focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
                           />
                           <button
@@ -314,9 +354,7 @@ export default function CategoriesPage() {
                         <p className="text-xs text-slate-500">{protocolHelp}</p>
                         {availableServers.length === 0 && (
                           <p className="text-xs text-amber-700">
-                            Tip: go to <a href={pathForm.protocol === 'smb' ? '/admin/smb' : '/admin/ftp'} className="underline font-medium">
-                              {pathForm.protocol === 'smb' ? 'SMB Servers' : 'FTP / FTPS Servers'}
-                            </a> to add one first.
+                            Tip: go to <a href={protocolAdminPath} className="underline font-medium">{protocolAdminLabel}</a> to add one first.
                           </p>
                         )}
                       </div>

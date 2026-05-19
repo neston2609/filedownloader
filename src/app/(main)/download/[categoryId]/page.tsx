@@ -19,6 +19,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     include: {
       smbPaths: { include: { smbServer: { select: { id: true, name: true } } } },
       ftpPaths: { include: { ftpServer: { select: { id: true, name: true, secure: true } } } },
+      scpPaths: { include: { scpServer: { select: { id: true, name: true } } } },
     },
   })
 
@@ -43,6 +44,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       id: p.id,
       protocol: (p.ftpServer.secure ? 'ftps' : 'ftp') as 'ftp' | 'ftps',
       serverName: p.ftpServer.name,
+      path: p.path,
+    })),
+    ...category.scpPaths.map((p) => ({
+      id: p.id,
+      protocol: 'scp' as const,
+      serverName: p.scpServer.name,
       path: p.path,
     })),
   ]

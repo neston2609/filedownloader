@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock } from 'lucide-react'
+import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock, Terminal } from 'lucide-react'
 import { formatBytes } from '@/lib/utils'
 
 interface SmbEntry {
@@ -13,7 +13,7 @@ interface SmbEntry {
 
 interface BrowserPath {
   id: string
-  protocol: 'smb' | 'ftp' | 'ftps'
+  protocol: 'smb' | 'ftp' | 'ftps' | 'scp'
   serverName: string
   path: string
 }
@@ -132,7 +132,10 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
           {paths.length > 1 && (
             <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
               {paths.map((p) => {
-                const Icon = p.protocol === 'smb' ? HardDrive : p.protocol === 'ftps' ? Lock : Server
+                const Icon = p.protocol === 'smb' ? HardDrive
+                  : p.protocol === 'ftps' ? Lock
+                  : p.protocol === 'scp' ? Terminal
+                  : Server
                 return (
                   <button
                     key={p.id}
