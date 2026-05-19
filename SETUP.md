@@ -10,7 +10,7 @@ Edit `.env` and set your PostgreSQL password:
 ```
 DATABASE_URL="postgresql://postgres:<YOUR_PASSWORD>@103.40.118.129:5432/download_db"
 NEXTAUTH_SECRET="run: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:8000"
 ```
 
 ## 2. Push Database Schema
@@ -30,7 +30,7 @@ Default admin: `admin@securefiles.local` / `Admin@1234`
 ```bash
 npm run dev
 ```
-Open http://localhost:3000
+Open http://localhost:8000
 
 ## 5. First Steps (Admin)
 
