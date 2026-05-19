@@ -80,6 +80,13 @@ export async function streamSmbFile(
   })
 }
 
+export interface SmbTestResult {
+  success: boolean
+  message: string
+  share: string
+  details?: { code?: string; errno?: string | number; stack?: string }
+}
+
 export async function testSmbConnection(
   host: string,
   port: number,
@@ -87,15 +94,41 @@ export async function testSmbConnection(
   password: string,
   domain: string,
   share: string
-): Promise<boolean> {
-  const { smb2Config } = buildSmbConfig(host, port, username, password, domain, share)
+): Promise<SmbTestResult> {
+  const { smb2Config, subPath } = buildSmbConfig(host, port, username, password, domain, share)
   const client = new SMB2(smb2Config)
 
   return new Promise((resolve) => {
     const c = client as any
-    c.readdir('.', (err?: Error) => {
-      c.close()
-      resolve(!err)
+    const browsePath = subPath || '.'
+
+    const timer = setTimeout(() => {
+      try { c.close() } catch {}
+      resolve({
+        success: false,
+        message: `Timed out after 10s connecting to ${smb2Config.share}`,
+        share: smb2Config.share,
+      })
+    }, 10000)
+
+    c.readdir(browsePath, (err?: NodeJS.ErrnoException, files?: string[]) => {
+      clearTimeout(timer)
+      try { c.close() } catch {}
+
+      if (err) {
+        resolve({
+          success: false,
+          message: `${err.message || 'Unknown SMB error'} (share: ${smb2Config.share}${subPath ? `, path: ${subPath}` : ''})`,
+          share: smb2Config.share,
+          details: { code: err.code, errno: err.errno, stack: err.stack },
+        })
+      } else {
+        resolve({
+          success: true,
+          message: `Connected. Listed ${files?.length ?? 0} entries in ${smb2Config.share}${subPath ? `\\${subPath}` : ''}`,
+          share: smb2Config.share,
+        })
+      }
     })
   })
 }
