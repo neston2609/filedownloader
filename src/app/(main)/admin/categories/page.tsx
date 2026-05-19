@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal, FolderSearch } from 'lucide-react'
+import { FolderPicker } from '@/components/FolderPicker'
 
 interface FileServer { id: string; name: string; host: string }
 interface FtpServerFull extends FileServer { secure: boolean }
@@ -29,6 +30,7 @@ export default function CategoriesPage() {
   const [addingPath, setAddingPath] = useState<string | null>(null)
   type Protocol = 'smb' | 'ftp' | 'ftps' | 'scp'
   const [pathForm, setPathForm] = useState<{ protocol: Protocol; serverId: string; path: string }>({ protocol: 'smb', serverId: '', path: '' })
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -343,6 +345,15 @@ export default function CategoriesPage() {
                             className="border border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 flex-1 min-w-[160px] focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
                           />
                           <button
+                            onClick={() => setPickerOpen(true)}
+                            disabled={!pathForm.serverId}
+                            title={pathForm.serverId ? 'Browse folders on this server' : 'Pick a server first'}
+                            className="flex items-center gap-1.5 border border-slate-700 hover:border-blue-500 hover:text-blue-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <FolderSearch className="w-3.5 h-3.5" />
+                            Browse
+                          </button>
+                          <button
                             onClick={() => addPath(cat.id)}
                             disabled={!pathForm.serverId || !pathForm.path}
                             className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
@@ -372,6 +383,20 @@ export default function CategoriesPage() {
             )
           })}
         </div>
+      )}
+
+      {pickerOpen && pathForm.serverId && (
+        <FolderPicker
+          protocol={pathForm.protocol}
+          serverId={pathForm.serverId}
+          serverName={availableServers.find(s => s.id === pathForm.serverId)?.name ?? ''}
+          initialPath={pathForm.path || undefined}
+          onSelect={(p) => {
+            setPathForm(f => ({ ...f, path: p }))
+            setPickerOpen(false)
+          }}
+          onClose={() => setPickerOpen(false)}
+        />
       )}
     </div>
   )
