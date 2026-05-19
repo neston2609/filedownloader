@@ -119,21 +119,15 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
     const filePath = buildFilePath(file)
     const playUrl = `/play/${encodeURIComponent(category.id)}?pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
 
-    // Strategy: try to open the player in a new tab FIRST — this gives it
-    // the user-gesture priority. If the browser blocks the popup (window.open
-    // returns null), navigate the current tab to the player as a fallback.
-    // The affiliate URL is the secondary popup; if it gets blocked it's OK,
-    // the user still gets the video.
-    const playWin = window.open(playUrl, '_blank', 'noopener,noreferrer')
-
+    // Browsers enforce "one popup per click" — so we use the one allowance
+    // for the affiliate URL (which MUST be a new tab), then navigate this
+    // tab to the player. Navigation isn't subject to popup blockers, so the
+    // player always opens; the affiliate gets the popup token, so it opens
+    // too. Result: affiliate in new tab + player in current tab.
     if (affiliateUrl) {
-      try { window.open(affiliateUrl, '_blank', 'noopener,noreferrer') } catch { /* ignore */ }
+      window.open(affiliateUrl, '_blank', 'noopener,noreferrer')
     }
-
-    if (!playWin) {
-      // Popup blocker killed the new tab — same-tab navigation always works
-      window.location.href = playUrl
-    }
+    window.location.href = playUrl
   }
 
   return (
