@@ -83,9 +83,17 @@ export default function CategoriesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this category?')) return
-    await fetch(`/api/categories/${id}`, { method: 'DELETE' })
-    setCategories(cs => cs.filter(c => c.id !== id))
+    if (!confirm('Delete this category? This also removes all associated paths, user access grants, and download logs for this category.')) return
+    try {
+      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? `Delete failed (${res.status})`)
+      }
+      setCategories(cs => cs.filter(c => c.id !== id))
+    } catch (err) {
+      alert(`Could not delete category:\n\n${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   async function addPath(catId: string) {

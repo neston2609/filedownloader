@@ -137,6 +137,6 @@ model DownloadLog {
   affiliateUrl String?
   createdAt    DateTime @default(now())
 
-  user     User     @relation(fields: [userId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
