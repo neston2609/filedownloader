@@ -147,7 +147,7 @@ export default function SmbPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">SMB Servers</h1>
+        <h1 className="text-3xl font-bold text-slate-100">SMB Servers</h1>
         <button
           onClick={startNew}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -157,10 +157,10 @@ export default function SmbPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-900">{editId ? 'Edit Server' : 'New SMB Server'}</h2>
-            <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600">
+            <h2 className="font-semibold text-slate-100">{editId ? 'Edit Server' : 'New SMB Server'}</h2>
+            <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-300">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -175,34 +175,34 @@ export default function SmbPage() {
               { label: 'Domain', field: 'domain', type: 'text', placeholder: 'WORKGROUP' },
             ].map(({ label, field, type, placeholder }) => (
               <div key={field}>
-                <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">{label}</label>
                 <input
                   type={type}
                   value={form[field as keyof typeof form]}
                   onChange={update(field)}
                   placeholder={placeholder}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
               </div>
             ))}
           </div>
 
           {/* Test connection panel */}
-          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <div className="mt-4 p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
             <div className="flex items-center gap-2 flex-wrap">
               <Info className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-xs text-slate-600">Test connection — probes</span>
+              <span className="text-xs text-slate-300">Test connection — probes</span>
               <input
                 type="text"
                 value={formTestShare}
                 onChange={e => setFormTestShare(e.target.value)}
                 placeholder="\\share or \\share\\subpath"
-                className="text-xs font-mono border border-slate-200 rounded px-2 py-1 w-48 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                className="text-xs font-mono border border-slate-700 rounded px-2 py-1 bg-slate-900 text-slate-100 placeholder-slate-500 w-48 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-slate-800"
               />
               <button
                 onClick={handleFormTest}
                 disabled={formTesting || !form.host || !form.username}
-                className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
               >
                 {formTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
                 {formTesting ? 'Testing...' : 'Test Connection'}
@@ -212,8 +212,8 @@ export default function SmbPage() {
             {formTestResult && (
               <div className={`mt-2 p-2.5 rounded-lg border text-xs ${
                 formTestResult.success
-                  ? 'bg-green-50 border-green-200 text-green-800'
-                  : 'bg-red-50 border-red-200 text-red-800'
+                  ? 'bg-green-500/10 border-green-500/30 text-green-300'
+                  : 'bg-red-500/10 border-red-500/30 text-red-300'
               }`}>
                 <div className="flex items-start gap-2">
                   {formTestResult.success
@@ -239,7 +239,7 @@ export default function SmbPage() {
           </div>
 
           {saveError && (
-            <div className="mt-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-start gap-2">
+            <div className="mt-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-300 flex items-start gap-2">
               <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{saveError}</span>
             </div>
@@ -253,7 +253,7 @@ export default function SmbPage() {
             >
               {saving ? 'Saving...' : editId ? 'Update' : 'Create'}
             </button>
-            <button onClick={() => setShowForm(false)} className="text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-100 transition-colors">Cancel</button>
+            <button onClick={() => setShowForm(false)} className="text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition-colors">Cancel</button>
           </div>
         </div>
       )}
@@ -269,11 +269,11 @@ export default function SmbPage() {
           {servers.map(srv => {
             const result = testResults[srv.id]
             return (
-              <div key={srv.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <div key={srv.id} className="bg-slate-800 border border-slate-700 rounded-xl shadow-sm overflow-hidden">
                 <div className="p-4 flex items-center gap-4">
                   <Server className="w-8 h-8 text-blue-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900">{srv.name}</p>
+                    <p className="font-semibold text-slate-100">{srv.name}</p>
                     <p className="text-sm text-slate-500 font-mono">{srv.username}@{srv.host}:{srv.port}</p>
                     {srv.domain && <p className="text-xs text-slate-400">Domain: {srv.domain}</p>}
                   </div>
@@ -281,12 +281,12 @@ export default function SmbPage() {
                   <button
                     onClick={() => handleServerTest(srv.id)}
                     disabled={testing === srv.id}
-                    className="flex items-center gap-1.5 text-xs border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors text-slate-600"
+                    className="flex items-center gap-1.5 text-xs border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-300"
                   >
                     {testing === srv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
                     {testing === srv.id ? 'Testing...' : 'Test'}
                   </button>
-                  <button onClick={() => startEdit(srv)} className="text-slate-400 hover:text-blue-600 transition-colors p-1">
+                  <button onClick={() => startEdit(srv)} className="text-slate-400 hover:text-blue-400 transition-colors p-1">
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDelete(srv.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
@@ -297,8 +297,8 @@ export default function SmbPage() {
                 {result && (
                   <div className={`border-t px-4 py-3 text-xs ${
                     result.success
-                      ? 'bg-green-50 border-green-200 text-green-800'
-                      : 'bg-red-50 border-red-200 text-red-800'
+                      ? 'bg-green-500/10 border-green-500/30 text-green-300'
+                      : 'bg-red-500/10 border-red-500/30 text-red-300'
                   }`}>
                     <div className="flex items-start gap-2">
                       {result.success

@@ -95,12 +95,11 @@ export function NavBar({ user }: NavBarProps) {
                   </button>
 
                   {fileServicesOpen && (
-                    <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
-                      <div className="px-4 py-2 bg-slate-50 border-b border-slate-200">
-                        <p className="text-[11px] uppercase font-semibold text-slate-500 tracking-wider">Protocols</p>
+                    <div className="absolute left-0 top-full mt-1 w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden z-50">
+                      <div className="px-4 py-2 bg-slate-900/50 border-b border-slate-700">
+                        <p className="text-[11px] uppercase font-semibold text-slate-400 tracking-wider">Protocols</p>
                       </div>
                       {fileServicesItems.map(({ href, label, desc, icon: Icon, color }) => {
-                        // Strip query strings for active check
                         const cleanHref = href.split('?')[0]
                         const active = pathname.startsWith(cleanHref)
                         return (
@@ -108,14 +107,14 @@ export function NavBar({ user }: NavBarProps) {
                             key={href}
                             href={href}
                             className={cn(
-                              'flex items-start gap-3 px-4 py-2.5 hover:bg-blue-50 transition-colors border-l-4',
-                              active ? 'bg-blue-50 border-blue-500' : 'border-transparent'
+                              'flex items-start gap-3 px-4 py-2.5 hover:bg-slate-700/70 transition-colors border-l-4',
+                              active ? 'bg-blue-500/10 border-blue-500' : 'border-transparent'
                             )}
                           >
                             <Icon className={cn('w-5 h-5 mt-0.5 flex-shrink-0', color)} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-slate-900">{label}</p>
-                              <p className="text-xs text-slate-500">{desc}</p>
+                              <p className="text-sm font-semibold text-slate-100">{label}</p>
+                              <p className="text-xs text-slate-400">{desc}</p>
                             </div>
                           </Link>
                         )

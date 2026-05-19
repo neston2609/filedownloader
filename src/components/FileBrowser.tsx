@@ -114,17 +114,17 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/download" className="text-slate-400 hover:text-slate-600 transition-colors">
+        <Link href="/download" className="text-slate-400 hover:text-slate-300 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{category.name}</h1>
+          <h1 className="text-2xl font-bold text-slate-100">{category.name}</h1>
           {category.description && <p className="text-slate-500 text-sm">{category.description}</p>}
         </div>
       </div>
 
       {paths.length === 0 ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-amber-800 text-sm">
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 text-amber-200 text-sm">
           No SMB or FTP paths are linked to this category yet.
         </div>
       ) : (
@@ -143,7 +143,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                       pathId === p.id
                         ? 'bg-blue-600 text-white'
-                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -155,8 +155,8 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
             </div>
           )}
 
-          <nav className="flex items-center gap-1 text-sm text-slate-500 mb-4 bg-white border border-slate-200 rounded-lg px-3 py-2 flex-wrap">
-            <button onClick={() => navigateTo('')} className="flex items-center gap-1 hover:text-blue-600 transition-colors">
+          <nav className="flex items-center gap-1 text-sm text-slate-500 mb-4 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 flex-wrap">
+            <button onClick={() => navigateTo('')} className="flex items-center gap-1 hover:text-blue-400 transition-colors">
               <Home className="w-3.5 h-3.5" />
               <span>Root</span>
             </button>
@@ -165,7 +165,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                 <ChevronRight className="w-3.5 h-3.5" />
                 <button
                   onClick={() => navigateTo(folderParts.slice(0, i + 1).join('/'))}
-                  className="hover:text-blue-600 transition-colors"
+                  className="hover:text-blue-400 transition-colors"
                 >
                   {part}
                 </button>
@@ -173,7 +173,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
             ))}
           </nav>
 
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-sm">
             {loading ? (
               <div className="flex items-center justify-center py-16 text-slate-400">
                 <Loader2 className="w-6 h-6 animate-spin mr-2" />
@@ -190,15 +190,15 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                 <p>This folder is empty</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-700/50">
                 {subPath && (
-                  <button onClick={navigateUp} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left">
+                  <button onClick={navigateUp} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 transition-colors text-left">
                     <Folder className="w-5 h-5 text-amber-400 flex-shrink-0" />
                     <span className="text-slate-500 text-sm font-mono">..</span>
                   </button>
                 )}
                 {entries.map((entry) => (
-                  <div key={entry.name} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors group">
+                  <div key={entry.name} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 transition-colors group">
                     {entry.isDirectory ? (
                       <Folder className="w-5 h-5 text-amber-400 flex-shrink-0" />
                     ) : (
@@ -206,11 +206,11 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                     )}
                     <div className="flex-1 min-w-0">
                       {entry.isDirectory ? (
-                        <button onClick={() => navigateInto(entry.name)} className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors truncate block w-full text-left">
+                        <button onClick={() => navigateInto(entry.name)} className="text-sm font-medium text-slate-200 hover:text-blue-400 transition-colors truncate block w-full text-left">
                           {entry.name}
                         </button>
                       ) : (
-                        <span className="text-sm text-slate-700 truncate block">{entry.name}</span>
+                        <span className="text-sm text-slate-200 truncate block">{entry.name}</span>
                       )}
                       {!entry.isDirectory && entry.size > 0 && (
                         <span className="text-xs text-slate-400">{formatBytes(entry.size)}</span>

@@ -160,7 +160,7 @@ export default function CategoriesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Categories</h1>
+        <h1 className="text-3xl font-bold text-slate-100">Categories</h1>
         <button
           onClick={() => { setShowForm(true); setEditId(null); setForm({ ...EMPTY_CAT }) }}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -170,36 +170,36 @@ export default function CategoriesPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-900">{editId ? 'Edit Category' : 'New Category'}</h2>
+            <h2 className="font-semibold text-slate-100">{editId ? 'Edit Category' : 'New Category'}</h2>
             <button onClick={() => setShowForm(false)}><X className="w-4 h-4 text-slate-400" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Category Name *</label>
-              <input type="text" value={form.name} onChange={update('name')} placeholder="Movies" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-slate-300 mb-1">Category Name *</label>
+              <input type="text" value={form.name} onChange={update('name')} placeholder="Movies" className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Sort Order</label>
-              <input type="number" value={form.sortOrder} onChange={update('sortOrder')} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-slate-300 mb-1">Sort Order</label>
+              <input type="number" value={form.sortOrder} onChange={update('sortOrder')} className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
-              <textarea value={form.description} onChange={update('description')} rows={2} placeholder="Category description..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <label className="block text-xs font-medium text-slate-300 mb-1">Description</label>
+              <textarea value={form.description} onChange={update('description')} rows={2} placeholder="Category description..." className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
                 <span className="flex items-center gap-1"><Link2 className="w-3 h-3" /> Affiliate Link Override (optional)</span>
               </label>
-              <input type="url" value={form.affiliateLinkOverride} onChange={update('affiliateLinkOverride')} placeholder="https://example.com/ref/123 (overrides global link)" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input type="url" value={form.affiliateLinkOverride} onChange={update('affiliateLinkOverride')} placeholder="https://example.com/ref/123 (overrides global link)" className="w-full border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
           </div>
           <div className="flex gap-2 mt-4">
             <button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-60 transition-colors">
               {saving ? 'Saving...' : editId ? 'Update' : 'Create'}
             </button>
-            <button onClick={() => setShowForm(false)} className="text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-100 transition-colors">Cancel</button>
+            <button onClick={() => setShowForm(false)} className="text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition-colors">Cancel</button>
           </div>
         </div>
       )}
@@ -217,14 +217,14 @@ export default function CategoriesPage() {
             const scpCount = cat.scpPaths.length
             const totalPaths = cat.smbPaths.length + cat.ftpPaths.length + scpCount
             return (
-              <div key={cat.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <div key={cat.id} className="bg-slate-800 border border-slate-700 rounded-xl shadow-sm overflow-hidden">
                 <div className="flex items-center gap-4 p-4">
                   <FolderOpen className={`w-8 h-8 flex-shrink-0 ${totalPaths === 0 ? 'text-slate-300' : 'text-amber-400'}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-slate-900">{cat.name}</p>
+                      <p className="font-semibold text-slate-100">{cat.name}</p>
                       {totalPaths === 0 && (
-                        <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                        <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" /> No paths
                         </span>
                       )}
@@ -243,26 +243,26 @@ export default function CategoriesPage() {
                       )}
                     </div>
                   </div>
-                  <button onClick={() => setExpandedCat(expandedCat === cat.id ? null : cat.id)} className="text-sm text-slate-500 hover:text-blue-600 border border-slate-200 px-2 py-1 rounded-lg transition-colors">
+                  <button onClick={() => setExpandedCat(expandedCat === cat.id ? null : cat.id)} className="text-sm text-slate-500 hover:text-blue-400 border border-slate-700 px-2 py-1 rounded-lg transition-colors">
                     Paths
                   </button>
-                  <button onClick={() => startEdit(cat)} className="text-slate-400 hover:text-blue-600 transition-colors p-1"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => startEdit(cat)} className="text-slate-400 hover:text-blue-400 transition-colors p-1"><Pencil className="w-4 h-4" /></button>
                   <button onClick={() => handleDelete(cat.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
                 </div>
 
                 {expandedCat === cat.id && (
-                  <div className="border-t border-slate-100 p-4 bg-slate-50">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
+                  <div className="border-t border-slate-700/50 p-4 bg-slate-800/50">
+                    <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-1.5">
                       <Server className="w-3.5 h-3.5" /> Server Paths
                     </h3>
                     <div className="space-y-2 mb-3">
                       {cat.smbPaths.map(p => (
-                        <div key={p.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <div key={p.id} className="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500">
                           <HardDrive className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                          <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">SMB</span>
-                          <span className="font-medium text-slate-700">{p.smbServer.name}</span>
+                          <span className="text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">SMB</span>
+                          <span className="font-medium text-slate-200">{p.smbServer.name}</span>
                           <span className="text-slate-400">→</span>
-                          <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
+                          <span className="font-mono text-slate-300 flex-1 truncate">{p.path}</span>
                           <button onClick={() => deletePath(cat.id, p.id, 'smb')} className="text-slate-300 hover:text-red-500 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -271,18 +271,18 @@ export default function CategoriesPage() {
                       {cat.ftpPaths.map(p => {
                         const isFtps = p.ftpServer.secure
                         return (
-                          <div key={p.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                          <div key={p.id} className="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500">
                             {isFtps
                               ? <Lock className="w-4 h-4 text-green-600 flex-shrink-0" />
                               : <Server className="w-4 h-4 text-amber-500 flex-shrink-0" />}
                             <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                              isFtps ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                              isFtps ? 'bg-green-500/20 text-green-300' : 'bg-amber-500/20 text-amber-300'
                             }`}>
                               {isFtps ? 'FTPS' : 'FTP'}
                             </span>
-                            <span className="font-medium text-slate-700">{p.ftpServer.name}</span>
+                            <span className="font-medium text-slate-200">{p.ftpServer.name}</span>
                             <span className="text-slate-400">→</span>
-                            <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
+                            <span className="font-mono text-slate-300 flex-1 truncate">{p.path}</span>
                             <button onClick={() => deletePath(cat.id, p.id, 'ftp')} className="text-slate-300 hover:text-red-500 transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -290,12 +290,12 @@ export default function CategoriesPage() {
                         )
                       })}
                       {cat.scpPaths.map(p => (
-                        <div key={p.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <div key={p.id} className="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-900 text-slate-100 placeholder-slate-500">
                           <Terminal className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                          <span className="text-[10px] font-bold uppercase bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">SCP</span>
-                          <span className="font-medium text-slate-700">{p.scpServer.name}</span>
+                          <span className="text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">SCP</span>
+                          <span className="font-medium text-slate-200">{p.scpServer.name}</span>
                           <span className="text-slate-400">→</span>
-                          <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
+                          <span className="font-mono text-slate-300 flex-1 truncate">{p.path}</span>
                           <button onClick={() => deletePath(cat.id, p.id, 'scp')} className="text-slate-300 hover:text-red-500 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -304,7 +304,7 @@ export default function CategoriesPage() {
                     </div>
 
                     {totalPaths === 0 && (
-                      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800 mb-3">
+                      <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-xs text-amber-200 mb-3">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <span>This category has no paths yet. Members with access will see an empty folder. Add at least one path below.</span>
                       </div>
@@ -316,7 +316,7 @@ export default function CategoriesPage() {
                           <select
                             value={pathForm.protocol}
                             onChange={e => setPathForm({ protocol: e.target.value as Protocol, serverId: '', path: '' })}
-                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
+                            className="border border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-slate-800 font-medium"
                           >
                             <option value="smb">📁 SMB (Windows share)</option>
                             <option value="ftp">🌐 FTP (unencrypted)</option>
@@ -326,7 +326,7 @@ export default function CategoriesPage() {
                           <select
                             value={pathForm.serverId}
                             onChange={e => setPathForm(f => ({ ...f, serverId: e.target.value }))}
-                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                            className="border border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-slate-800"
                           >
                             <option value="">
                               {availableServers.length === 0
@@ -340,20 +340,20 @@ export default function CategoriesPage() {
                             value={pathForm.path}
                             onChange={e => setPathForm(f => ({ ...f, path: e.target.value }))}
                             placeholder={pathForm.protocol === 'smb' ? '\\share\\folder' : pathForm.protocol === 'scp' ? '/home/user/files' : '/folder/subfolder'}
-                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[160px] focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
+                            className="border border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-slate-900 text-slate-100 placeholder-slate-500 flex-1 min-w-[160px] focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
                           />
                           <button
                             onClick={() => addPath(cat.id)}
                             disabled={!pathForm.serverId || !pathForm.path}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                           >
                             Add
                           </button>
-                          <button onClick={() => setAddingPath(null)} className="text-slate-500 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-100 transition-colors">Cancel</button>
+                          <button onClick={() => setAddingPath(null)} className="text-slate-500 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-700 transition-colors">Cancel</button>
                         </div>
                         <p className="text-xs text-slate-500">{protocolHelp}</p>
                         {availableServers.length === 0 && (
-                          <p className="text-xs text-amber-700">
+                          <p className="text-xs text-amber-300">
                             Tip: go to <a href={protocolAdminPath} className="underline font-medium">{protocolAdminLabel}</a> to add one first.
                           </p>
                         )}
@@ -361,7 +361,7 @@ export default function CategoriesPage() {
                     ) : (
                       <button
                         onClick={() => { setAddingPath(cat.id); setPathForm({ protocol: 'smb', serverId: '', path: '' }) }}
-                        className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add Server Path
                       </button>
