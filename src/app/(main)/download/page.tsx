@@ -1,12 +1,14 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, Unlock, FolderOpen, ChevronRight } from 'lucide-react'
 
 export default async function DownloadPage() {
   const session = await auth()
-  const userId = session!.user!.id
-  const isAdmin = session!.user!.role === 'ADMIN'
+  if (!session?.user?.id) redirect('/login')
+  const userId = session.user.id
+  const isAdmin = session.user.role === 'ADMIN'
 
   const [categories, accessRecords] = await Promise.all([
     prisma.category.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }),

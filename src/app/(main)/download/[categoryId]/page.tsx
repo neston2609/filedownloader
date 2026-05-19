@@ -10,8 +10,9 @@ interface Props {
 
 export default async function CategoryPage({ params, searchParams }: Props) {
   const session = await auth()
-  const userId = session!.user!.id
-  const isAdmin = session!.user!.role === 'ADMIN'
+  if (!session?.user?.id) redirect('/login')
+  const userId = session.user.id
+  const isAdmin = session.user.role === 'ADMIN'
 
   const category = await prisma.category.findUnique({
     where: { id: params.categoryId },
