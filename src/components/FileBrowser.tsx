@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive } from 'lucide-react'
+import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock } from 'lucide-react'
 import { formatBytes } from '@/lib/utils'
 
 interface SmbEntry {
@@ -13,7 +13,7 @@ interface SmbEntry {
 
 interface BrowserPath {
   id: string
-  protocol: 'smb' | 'ftp'
+  protocol: 'smb' | 'ftp' | 'ftps'
   serverName: string
   path: string
 }
@@ -87,7 +87,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
 
   async function handleDownload(file: SmbEntry) {
     if (!pathId) return
-    const sep = activePath?.protocol === 'ftp' ? '/' : '\\'
+    const sep = activePath?.protocol === 'smb' ? '\\' : '/'
     const filePath = folderParts.length > 0
       ? `${folderParts.join(sep)}${sep}${file.name}`
       : file.name
@@ -131,21 +131,24 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
         <>
           {paths.length > 1 && (
             <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-              {paths.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => selectPath(p.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    pathId === p.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                  }`}
-                >
-                  {p.protocol === 'ftp' ? <Server className="w-3.5 h-3.5" /> : <HardDrive className="w-3.5 h-3.5" />}
-                  <span className="uppercase text-[10px] opacity-75 font-bold">{p.protocol}</span>
-                  {p.serverName}: {p.path}
-                </button>
-              ))}
+              {paths.map((p) => {
+                const Icon = p.protocol === 'smb' ? HardDrive : p.protocol === 'ftps' ? Lock : Server
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => selectPath(p.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                      pathId === p.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className="uppercase text-[10px] opacity-75 font-bold">{p.protocol}</span>
+                    {p.serverName}: {p.path}
+                  </button>
+                )
+              })}
             </div>
           )}
 

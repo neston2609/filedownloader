@@ -1,10 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle } from 'lucide-react'
 
 interface FileServer { id: string; name: string; host: string }
+interface FtpServerFull extends FileServer { secure: boolean }
 interface SmbPath { id: string; path: string; smbServer: FileServer }
-interface FtpPath { id: string; path: string; ftpServer: FileServer }
+interface FtpPath { id: string; path: string; ftpServer: FtpServerFull }
 interface Category {
   id: string; name: string; description: string; affiliateLinkOverride: string | null
   sortOrder: number; smbPaths: SmbPath[]; ftpPaths: FtpPath[]
@@ -15,7 +16,7 @@ const EMPTY_CAT = { name: '', description: '', affiliateLinkOverride: '', sortOr
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [smbServers, setSmbServers] = useState<FileServer[]>([])
-  const [ftpServers, setFtpServers] = useState<FileServer[]>([])
+  const [ftpServers, setFtpServers] = useState<FtpServerFull[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -23,7 +24,8 @@ export default function CategoriesPage() {
   const [saving, setSaving] = useState(false)
   const [expandedCat, setExpandedCat] = useState<string | null>(null)
   const [addingPath, setAddingPath] = useState<string | null>(null)
-  const [pathForm, setPathForm] = useState<{ protocol: 'smb' | 'ftp'; serverId: string; path: string }>({ protocol: 'smb', serverId: '', path: '' })
+  type Protocol = 'smb' | 'ftp' | 'ftps'
+  const [pathForm, setPathForm] = useState<{ protocol: Protocol; serverId: string; path: string }>({ protocol: 'smb', serverId: '', path: '' })
 
   useEffect(() => {
     Promise.all([
@@ -82,11 +84,12 @@ export default function CategoriesPage() {
   async function addPath(catId: string) {
     if (!pathForm.serverId || !pathForm.path) return
 
-    const endpoint = pathForm.protocol === 'smb'
+    const isSmb = pathForm.protocol === 'smb'
+    const endpoint = isSmb
       ? `/api/categories/${catId}/paths`
       : `/api/categories/${catId}/ftp-paths`
 
-    const body = pathForm.protocol === 'smb'
+    const body = isSmb
       ? { smbServerId: pathForm.serverId, path: pathForm.path }
       : { ftpServerId: pathForm.serverId, path: pathForm.path }
 
@@ -100,8 +103,8 @@ export default function CategoriesPage() {
     }
   }
 
-  async function deletePath(catId: string, pathId: string, protocol: 'smb' | 'ftp') {
-    const endpoint = protocol === 'smb'
+  async function deletePath(catId: string, pathId: string, isSmbPath: boolean) {
+    const endpoint = isSmbPath
       ? `/api/categories/${catId}/paths`
       : `/api/categories/${catId}/ftp-paths`
 
@@ -117,7 +120,15 @@ export default function CategoriesPage() {
     setShowForm(true)
   }
 
-  const availableServers = pathForm.protocol === 'smb' ? smbServers : ftpServers
+  const availableServers: FileServer[] =
+    pathForm.protocol === 'smb' ? smbServers
+    : pathForm.protocol === 'ftps' ? ftpServers.filter(s => s.secure)
+    : ftpServers.filter(s => !s.secure)
+
+  const protocolHelp =
+    pathForm.protocol === 'smb' ? 'Use SMB for Windows shares. Format: \\share\\folder'
+    : pathForm.protocol === 'ftps' ? 'FTPS = FTP over TLS. Pick a server flagged with FTPS.'
+    : 'Plain FTP (unencrypted). Pick an FTP-only server.'
 
   if (loading) return <div className="text-center py-16 text-slate-400">Loading...</div>
 
@@ -176,16 +187,30 @@ export default function CategoriesPage() {
       ) : (
         <div className="space-y-3">
           {categories.map(cat => {
+            const ftpsCount = cat.ftpPaths.filter(p => p.ftpServer.secure).length
+            const ftpCount = cat.ftpPaths.length - ftpsCount
             const totalPaths = cat.smbPaths.length + cat.ftpPaths.length
             return (
               <div key={cat.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="flex items-center gap-4 p-4">
-                  <FolderOpen className="w-8 h-8 text-amber-400 flex-shrink-0" />
+                  <FolderOpen className={`w-8 h-8 flex-shrink-0 ${totalPaths === 0 ? 'text-slate-300' : 'text-amber-400'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900">{cat.name}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-900">{cat.name}</p>
+                      {totalPaths === 0 && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> No paths
+                        </span>
+                      )}
+                    </div>
                     {cat.description && <p className="text-sm text-slate-500 truncate">{cat.description}</p>}
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      <span className="text-xs text-slate-400">{totalPaths} path(s) · {cat.smbPaths.length} SMB · {cat.ftpPaths.length} FTP</span>
+                      <span className="text-xs text-slate-400">
+                        {totalPaths} path(s)
+                        {cat.smbPaths.length > 0 && ` · ${cat.smbPaths.length} SMB`}
+                        {ftpCount > 0 && ` · ${ftpCount} FTP`}
+                        {ftpsCount > 0 && ` · ${ftpsCount} FTPS`}
+                      </span>
                       {cat.affiliateLinkOverride && (
                         <span className="text-xs text-blue-500 flex items-center gap-1"><Link2 className="w-3 h-3" />Custom affiliate</span>
                       )}
@@ -211,52 +236,89 @@ export default function CategoriesPage() {
                           <span className="font-medium text-slate-700">{p.smbServer.name}</span>
                           <span className="text-slate-400">→</span>
                           <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
-                          <button onClick={() => deletePath(cat.id, p.id, 'smb')} className="text-slate-300 hover:text-red-500 transition-colors">
+                          <button onClick={() => deletePath(cat.id, p.id, true)} className="text-slate-300 hover:text-red-500 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))}
-                      {cat.ftpPaths.map(p => (
-                        <div key={p.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                          <Server className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          <span className="text-[10px] font-bold uppercase bg-green-100 text-green-700 px-1.5 py-0.5 rounded">FTP</span>
-                          <span className="font-medium text-slate-700">{p.ftpServer.name}</span>
-                          <span className="text-slate-400">→</span>
-                          <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
-                          <button onClick={() => deletePath(cat.id, p.id, 'ftp')} className="text-slate-300 hover:text-red-500 transition-colors">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
+                      {cat.ftpPaths.map(p => {
+                        const isFtps = p.ftpServer.secure
+                        return (
+                          <div key={p.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            {isFtps
+                              ? <Lock className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              : <Server className="w-4 h-4 text-amber-500 flex-shrink-0" />}
+                            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                              isFtps ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {isFtps ? 'FTPS' : 'FTP'}
+                            </span>
+                            <span className="font-medium text-slate-700">{p.ftpServer.name}</span>
+                            <span className="text-slate-400">→</span>
+                            <span className="font-mono text-slate-600 flex-1 truncate">{p.path}</span>
+                            <button onClick={() => deletePath(cat.id, p.id, false)} className="text-slate-300 hover:text-red-500 transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )
+                      })}
                     </div>
 
+                    {totalPaths === 0 && (
+                      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800 mb-3">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>This category has no paths yet. Members with access will see an empty folder. Add at least one path below.</span>
+                      </div>
+                    )}
+
                     {addingPath === cat.id ? (
-                      <div className="flex gap-2 flex-wrap items-center">
-                        <select
-                          value={pathForm.protocol}
-                          onChange={e => setPathForm({ protocol: e.target.value as 'smb' | 'ftp', serverId: '', path: '' })}
-                          className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
-                        >
-                          <option value="smb">SMB</option>
-                          <option value="ftp">FTP</option>
-                        </select>
-                        <select
-                          value={pathForm.serverId}
-                          onChange={e => setPathForm(f => ({ ...f, serverId: e.target.value }))}
-                          className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
-                        >
-                          <option value="">Select {pathForm.protocol.toUpperCase()} Server</option>
-                          {availableServers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                        <input
-                          type="text"
-                          value={pathForm.path}
-                          onChange={e => setPathForm(f => ({ ...f, path: e.target.value }))}
-                          placeholder={pathForm.protocol === 'smb' ? '\\share\\folder' : '/folder/subfolder'}
-                          className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[160px] focus:outline-none focus:ring-1 focus:ring-blue-400"
-                        />
-                        <button onClick={() => addPath(cat.id)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">Add</button>
-                        <button onClick={() => setAddingPath(null)} className="text-slate-500 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-100 transition-colors">Cancel</button>
+                      <div className="space-y-2">
+                        <div className="flex gap-2 flex-wrap items-center">
+                          <select
+                            value={pathForm.protocol}
+                            onChange={e => setPathForm({ protocol: e.target.value as Protocol, serverId: '', path: '' })}
+                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium"
+                          >
+                            <option value="smb">📁 SMB (Windows share)</option>
+                            <option value="ftp">🌐 FTP (unencrypted)</option>
+                            <option value="ftps">🔒 FTPS (TLS-encrypted)</option>
+                          </select>
+                          <select
+                            value={pathForm.serverId}
+                            onChange={e => setPathForm(f => ({ ...f, serverId: e.target.value }))}
+                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                          >
+                            <option value="">
+                              {availableServers.length === 0
+                                ? `No ${pathForm.protocol.toUpperCase()} servers configured`
+                                : `Select ${pathForm.protocol.toUpperCase()} Server`}
+                            </option>
+                            {availableServers.map(s => <option key={s.id} value={s.id}>{s.name} ({s.host})</option>)}
+                          </select>
+                          <input
+                            type="text"
+                            value={pathForm.path}
+                            onChange={e => setPathForm(f => ({ ...f, path: e.target.value }))}
+                            placeholder={pathForm.protocol === 'smb' ? '\\share\\folder' : '/folder/subfolder'}
+                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[160px] focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
+                          />
+                          <button
+                            onClick={() => addPath(cat.id)}
+                            disabled={!pathForm.serverId || !pathForm.path}
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            Add
+                          </button>
+                          <button onClick={() => setAddingPath(null)} className="text-slate-500 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-100 transition-colors">Cancel</button>
+                        </div>
+                        <p className="text-xs text-slate-500">{protocolHelp}</p>
+                        {availableServers.length === 0 && (
+                          <p className="text-xs text-amber-700">
+                            Tip: go to <a href={pathForm.protocol === 'smb' ? '/admin/smb' : '/admin/ftp'} className="underline font-medium">
+                              {pathForm.protocol === 'smb' ? 'SMB Servers' : 'FTP / FTPS Servers'}
+                            </a> to add one first.
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <button

@@ -15,6 +15,8 @@ interface TestResult {
 
 const EMPTY = { name: '', host: '', port: 21, username: '', password: '', secure: false, passive: true }
 const DEFAULT_TEST_SHARE = '/'
+const FTP_PORT = 21
+const FTPS_PORT = 990
 
 export default function FtpPage() {
   const [servers, setServers] = useState<FtpServer[]>([])
@@ -137,7 +139,7 @@ export default function FtpPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">FTP Servers</h1>
+        <h1 className="text-3xl font-bold text-slate-900">FTP / FTPS Servers</h1>
         <button onClick={startNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           <Plus className="w-4 h-4" /> Add Server
         </button>
@@ -152,10 +154,48 @@ export default function FtpPage() {
             </button>
           </div>
 
+          {/* Protocol selector */}
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Protocol</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, secure: false, port: f.port === FTPS_PORT ? FTP_PORT : f.port }))}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  !form.secure
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'
+                }`}
+              >
+                <Server className="w-4 h-4" />
+                FTP
+                <span className="text-[10px] opacity-75">(unencrypted)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, secure: true, port: f.port === FTP_PORT ? FTPS_PORT : f.port }))}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  form.secure
+                    ? 'bg-green-50 border-green-500 text-green-700'
+                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                FTPS
+                <span className="text-[10px] opacity-75">(TLS-encrypted)</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1.5">
+              {form.secure
+                ? 'FTPS encrypts the connection with TLS. Common ports: 990 (implicit) or 21 (explicit AUTH TLS).'
+                : 'Plain FTP sends credentials in clear text. Use only on trusted networks.'}
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Display Name</label>
-              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder="My FTP Server" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input type="text" value={form.name} onChange={e => setField('name', e.target.value)} placeholder={form.secure ? 'My FTPS Server' : 'My FTP Server'} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Host / IP</label>
@@ -163,7 +203,7 @@ export default function FtpPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Port</label>
-              <input type="number" value={form.port} onChange={e => setField('port', Number(e.target.value) || 21)} placeholder="21" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input type="number" value={form.port} onChange={e => setField('port', Number(e.target.value) || (form.secure ? FTPS_PORT : FTP_PORT))} placeholder={String(form.secure ? FTPS_PORT : FTP_PORT)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Username</label>
@@ -173,15 +213,11 @@ export default function FtpPage() {
               <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
               <input type="password" value={form.password} onChange={e => setField('password', e.target.value)} placeholder={editId ? '(leave blank to keep current)' : 'password'} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
-            <div className="flex flex-col gap-2 justify-end">
-              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                <input type="checkbox" checked={form.secure} onChange={e => setField('secure', e.target.checked)} className="rounded border-slate-300" />
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                FTPS (TLS)
-              </label>
+            <div className="flex items-end">
               <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                 <input type="checkbox" checked={form.passive} onChange={e => setField('passive', e.target.checked)} className="rounded border-slate-300" />
                 Passive mode
+                <span className="text-[10px] text-slate-400">(recommended)</span>
               </label>
             </div>
           </div>
@@ -251,11 +287,17 @@ export default function FtpPage() {
             return (
               <div key={srv.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="p-4 flex items-center gap-4">
-                  <Server className="w-8 h-8 text-green-500 flex-shrink-0" />
+                  {srv.secure
+                    ? <Lock className="w-8 h-8 text-green-500 flex-shrink-0" />
+                    : <Server className="w-8 h-8 text-amber-500 flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-900">{srv.name}</p>
-                      {srv.secure && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium flex items-center gap-1"><Lock className="w-3 h-3" />FTPS</span>}
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${
+                        srv.secure ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {srv.secure ? <><Lock className="w-3 h-3" />FTPS</> : 'FTP'}
+                      </span>
                     </div>
                     <p className="text-sm text-slate-500 font-mono">{srv.username}@{srv.host}:{srv.port}</p>
                     <p className="text-xs text-slate-400">{srv.passive ? 'Passive' : 'Active'} mode</p>

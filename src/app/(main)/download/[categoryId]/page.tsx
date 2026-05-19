@@ -18,7 +18,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     where: { id: params.categoryId },
     include: {
       smbPaths: { include: { smbServer: { select: { id: true, name: true } } } },
-      ftpPaths: { include: { ftpServer: { select: { id: true, name: true } } } },
+      ftpPaths: { include: { ftpServer: { select: { id: true, name: true, secure: true } } } },
     },
   })
 
@@ -41,7 +41,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     })),
     ...category.ftpPaths.map((p) => ({
       id: p.id,
-      protocol: 'ftp' as const,
+      protocol: (p.ftpServer.secure ? 'ftps' : 'ftp') as 'ftp' | 'ftps',
       serverName: p.ftpServer.name,
       path: p.path,
     })),
