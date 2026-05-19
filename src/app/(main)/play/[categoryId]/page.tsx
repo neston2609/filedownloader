@@ -4,7 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Download as DownloadIcon, Film } from 'lucide-react'
 import path from 'path'
-import { videoMimeType, isVideo } from '@/lib/media'
+import { isVideo, isNativeBrowserVideo } from '@/lib/media'
 
 interface Props {
   params: { categoryId: string }
@@ -35,8 +35,8 @@ export default async function PlayPage({ params, searchParams }: Props) {
   if (!category) notFound()
 
   const filename = path.basename(filePath)
-  const mime = videoMimeType(filename)
   const looksLikeVideo = isVideo(filename)
+  const willTranscode = looksLikeVideo && !isNativeBrowserVideo(filename)
 
   // Encode query params for the stream URL
   const streamUrl = `/api/stream?categoryId=${encodeURIComponent(params.categoryId)}&pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
@@ -74,14 +74,15 @@ export default async function PlayPage({ params, searchParams }: Props) {
       <div className="bg-ink min-h-[calc(100vh-72px-58px)] flex items-center justify-center p-2 sm:p-6">
         {looksLikeVideo ? (
           <video
+            key={streamUrl}
             controls
             autoPlay
             playsInline
             preload="metadata"
-            className="max-w-full max-h-[80vh] w-full rounded-2xl shadow-hard-lg shadow-retro-coral"
+            src={streamUrl}
+            className="max-w-full max-h-[80vh] w-full rounded-2xl shadow-hard-lg shadow-retro-coral bg-ink"
             style={{ aspectRatio: '16 / 9' }}
           >
-            <source src={streamUrl} type={mime} />
             Your browser doesn&apos;t support HTML5 video. Use Download instead.
           </video>
         ) : (
@@ -95,8 +96,17 @@ export default async function PlayPage({ params, searchParams }: Props) {
       {/* Compatibility note */}
       <div className="bg-bg2 border-t-[1.5px] border-ink px-4 py-3">
         <div className="max-w-7xl mx-auto text-[11px] text-ink2 font-mono">
-          Browser playback works best with <span className="text-ink font-semibold">.mp4</span> (H.264) and <span className="text-ink font-semibold">.webm</span>.
-          .mkv / .avi may not play — use Download instead. Seeking re-fetches from start (no range support yet).
+          {willTranscode ? (
+            <>
+              <span className="text-ink font-semibold">Transcoding live</span> — your file
+              ({path.extname(filename).slice(1).toUpperCase()}) is being converted to MP4 on the server.
+              First frame may take a few seconds; please don&apos;t seek backward.
+            </>
+          ) : (
+            <>
+              <span className="text-ink font-semibold">Native playback</span> — your browser is decoding the file directly. No transcoding overhead.
+            </>
+          )}
         </div>
       </div>
     </div>

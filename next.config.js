@@ -10,6 +10,7 @@ const nextConfig = {
       'ssh2-sftp-client',
       'ssh2',
       'cpu-features',
+      'ffmpeg-static',
     ],
   },
 
@@ -24,6 +25,7 @@ const nextConfig = {
         'basic-ftp',
         'ssh2-sftp-client',
         'ssh2',
+        'ffmpeg-static',
       ]
     }
     return config
