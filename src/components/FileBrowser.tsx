@@ -114,28 +114,26 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
     setTimeout(() => setDownloadingFile(null), 2000)
   }
 
-  function openInNewTab(url: string) {
-    // Simulate a click on an <a target="_blank"> — browsers treat this as a
-    // real link click, so the popup blocker doesn't fire (unlike window.open
-    // inside a setTimeout or after an await).
-    const a = document.createElement('a')
-    a.href = url
-    a.target = '_blank'
-    a.rel = 'noopener noreferrer'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-  }
-
   function handlePlay(file: SmbEntry) {
     if (!pathId) return
     const filePath = buildFilePath(file)
     const playUrl = `/play/${encodeURIComponent(category.id)}?pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
 
-    // Open affiliate first (side-tab), then the player. Both fired inside the
-    // same click event via anchor-click so the popup blocker permits both.
-    if (affiliateUrl) openInNewTab(affiliateUrl)
-    openInNewTab(playUrl)
+    // Strategy: try to open the player in a new tab FIRST — this gives it
+    // the user-gesture priority. If the browser blocks the popup (window.open
+    // returns null), navigate the current tab to the player as a fallback.
+    // The affiliate URL is the secondary popup; if it gets blocked it's OK,
+    // the user still gets the video.
+    const playWin = window.open(playUrl, '_blank', 'noopener,noreferrer')
+
+    if (affiliateUrl) {
+      try { window.open(affiliateUrl, '_blank', 'noopener,noreferrer') } catch { /* ignore */ }
+    }
+
+    if (!playWin) {
+      // Popup blocker killed the new tab — same-tab navigation always works
+      window.location.href = playUrl
+    }
   }
 
   return (
