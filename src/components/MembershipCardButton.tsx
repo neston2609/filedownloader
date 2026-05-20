@@ -45,24 +45,26 @@ function buildCardHtml(opts: {
   html, body { margin: 0; padding: 0; }
   body {
     font-family: 'Geist', 'Segoe UI', system-ui, sans-serif;
-    width: 148mm; height: 210mm; padding: 12mm;
+    width: 148mm; height: 210mm; padding: 6mm;
     background: #f4f1e8; color: #0d1117;
   }
-  .card { border: 2px solid #0d1117; border-radius: 14px; background: #fdfbf3; height: 100%; padding: 9mm; display: flex; flex-direction: column; }
-  .head { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0d1117; padding-bottom: 5mm; margin-bottom: 5mm; }
-  .brand { font-size: 20pt; font-weight: 800; letter-spacing: -0.5px; }
-  .badge { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: #c4ec38; border: 1.5px solid #0d1117; border-radius: 999px; padding: 3px 10px; }
-  h2 { font-size: 11pt; margin: 4mm 0 2mm; text-transform: uppercase; letter-spacing: 0.5px; color: #3d4654; }
-  .creds { background: #ebe6d6; border: 1.5px solid #0d1117; border-radius: 10px; padding: 4mm 5mm; }
-  .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 11pt; }
+  .card { border: 2px solid #0d1117; border-radius: 12px; background: #fdfbf3; height: 100%; padding: 5mm 6mm; display: flex; flex-direction: column; overflow: hidden; }
+  .head { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0d1117; padding-bottom: 2.5mm; margin-bottom: 2.5mm; }
+  .brand { font-size: 17pt; font-weight: 800; letter-spacing: -0.5px; }
+  .badge { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: #c4ec38; border: 1.5px solid #0d1117; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  h2 { font-size: 9.5pt; margin: 3mm 0 1.5mm; text-transform: uppercase; letter-spacing: 0.5px; color: #3d4654; }
+  .creds { background: #ebe6d6; border: 1.5px solid #0d1117; border-radius: 8px; padding: 2.5mm 4mm; }
+  .row { display: flex; justify-content: space-between; padding: 0.8mm 0; font-size: 9.5pt; }
   .row .k { color: #6b7484; }
   .row .v { font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-  ol, ul { margin: 1mm 0 0; padding-left: 6mm; font-size: 9.5pt; line-height: 1.6; color: #3d4654; }
-  .two { display: flex; gap: 4mm; }
-  .two > div { flex: 1; background: #fdfbf3; border: 1.5px solid #0d1117; border-radius: 10px; padding: 3mm 4mm; }
-  .pill { display: inline-block; font-size: 8pt; font-weight: 700; background: #5bcaff; border: 1.5px solid #0d1117; border-radius: 999px; padding: 1px 8px; margin-bottom: 1.5mm; }
+  ol, ul { margin: 0.5mm 0 0; padding-left: 5mm; font-size: 8.5pt; line-height: 1.45; color: #3d4654; }
+  ol li { padding-left: 1mm; }
+  .two { display: flex; gap: 3mm; }
+  .two > div { flex: 1; background: #fdfbf3; border: 1.5px solid #0d1117; border-radius: 8px; padding: 2mm 3mm; }
+  .two .desc { font-size: 8pt; color: #3d4654; line-height: 1.4; }
+  .pill { display: inline-block; font-size: 7pt; font-weight: 700; background: #5bcaff; border: 1.5px solid #0d1117; border-radius: 999px; padding: 1px 7px; margin-bottom: 1mm; }
   .pill.coral { background: #ff6b4a; color: #fff; }
-  .foot { margin-top: auto; border-top: 1.5px dashed #0d1117; padding-top: 3mm; font-size: 8pt; color: #6b7484; text-align: center; }
+  .foot { margin-top: auto; border-top: 1.5px dashed #0d1117; padding-top: 2mm; font-size: 7.5pt; color: #6b7484; text-align: center; }
   .url { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0d1117; }
 </style>
 </head>
@@ -93,11 +95,11 @@ function buildCardHtml(opts: {
     <div class="two">
       <div>
         <span class="pill">DOWNLOAD</span>
-        <div style="font-size:9pt;color:#3d4654;line-height:1.5">เปิดหมวดหมู่ที่ได้รับสิทธิ์ แล้วกดปุ่ม <b>Download</b> ที่ไฟล์เพื่อบันทึกลงเครื่อง</div>
+        <div class="desc">เปิดหมวดที่ได้รับสิทธิ์ แล้วกดปุ่ม <b>Download</b> ที่ไฟล์</div>
       </div>
       <div>
         <span class="pill coral">PLAY</span>
-        <div style="font-size:9pt;color:#3d4654;line-height:1.5">ไฟล์วิดีโอจะมีปุ่ม <b>Play</b> กดเพื่อรับชมผ่านเบราว์เซอร์ได้ทันที</div>
+        <div class="desc">ไฟล์วิดีโอมีปุ่ม <b>Play</b> กดดูผ่านเบราว์เซอร์ได้ทันที</div>
       </div>
     </div>
 
