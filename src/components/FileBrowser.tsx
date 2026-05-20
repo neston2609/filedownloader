@@ -11,9 +11,15 @@ const COVER_RE = /^folder\.(jpg|jpeg|png|webp)$/i
 // falling back to the folder icon if it 404s.
 function FolderThumb({ coverUrl }: { coverUrl: string }) {
   const [failed, setFailed] = useState(false)
-  if (failed) return <Folder className="w-5 h-5 text-ink flex-shrink-0" />
+  if (failed) {
+    return (
+      <span className="w-28 h-28 rounded-lg bg-bg2 border border-line flex-shrink-0 -my-2 grid place-items-center">
+        <Folder className="w-10 h-10 text-ink" />
+      </span>
+    )
+  }
   return (
-    <span className="w-9 h-9 rounded-lg overflow-hidden bg-bg2 border border-line flex-shrink-0 -my-1.5">
+    <span className="w-28 h-28 rounded-lg overflow-hidden bg-bg2 border border-line flex-shrink-0 -my-2">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={coverUrl} alt="" className="w-full h-full object-cover" onError={() => setFailed(true)} />
     </span>
