@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { AccountForm } from '@/components/AccountForm'
+import { membershipExpiry } from '@/lib/membership'
 
 export default async function AccountPage() {
   const session = await auth()
@@ -9,10 +10,15 @@ export default async function AccountPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, email: true, username: true, role: true, paymentStatus: true, createdAt: true },
+    select: {
+      id: true, email: true, username: true, role: true, paymentStatus: true,
+      createdAt: true, membershipStart: true, membershipMonths: true,
+    },
   })
 
   if (!user) redirect('/login')
+
+  const expiry = membershipExpiry(user)
 
   return (
     <div className="max-w-2xl">
@@ -25,6 +31,9 @@ export default async function AccountPage() {
         role: user.role,
         paymentStatus: user.paymentStatus,
         createdAt: user.createdAt.toISOString(),
+        membershipStart: user.membershipStart ? user.membershipStart.toISOString() : null,
+        membershipExpiry: expiry ? expiry.toISOString() : null,
+        membershipMonths: user.membershipMonths,
       }} />
     </div>
   )

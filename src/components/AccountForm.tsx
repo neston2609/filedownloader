@@ -11,10 +11,14 @@ interface AccountFormProps {
     role: string
     paymentStatus: string
     createdAt: string
+    membershipStart: string | null
+    membershipExpiry: string | null
+    membershipMonths: number | null
   }
 }
 
 export function AccountForm({ user }: AccountFormProps) {
+  const isExpired = user.membershipExpiry ? new Date(user.membershipExpiry).getTime() < Date.now() : false
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -101,8 +105,26 @@ export function AccountForm({ user }: AccountFormProps) {
               }`}>{user.paymentStatus}</span>
             </dd>
           </div>
+          <div>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-3 h-3" />Membership Start</dt>
+            <dd className="text-ink font-medium mt-0.5">
+              {user.membershipStart ? formatDate(user.membershipStart) : <span className="text-mute">Not set</span>}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-3 h-3" />Membership Expires</dt>
+            <dd className="mt-0.5">
+              {user.membershipExpiry ? (
+                <span className={isExpired ? 'text-retro-coral font-semibold' : 'text-ink font-medium'}>
+                  {formatDate(user.membershipExpiry)}{isExpired ? ' (expired)' : ''}
+                </span>
+              ) : (
+                <span className="text-ink font-medium">Unlimited</span>
+              )}
+            </dd>
+          </div>
           <div className="sm:col-span-2">
-            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-3 h-3" />Member Since</dt>
+            <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-3 h-3" />Account Created</dt>
             <dd className="text-ink mt-0.5">{formatDate(user.createdAt)}</dd>
           </div>
         </dl>
