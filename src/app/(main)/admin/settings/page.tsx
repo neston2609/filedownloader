@@ -17,6 +17,7 @@ interface Settings {
   contactEmail: string
   bankAccount: string
   paymentQrUrl: string | null
+  cardFooterNote: string
   hasSmtpPassword?: boolean
 }
 
@@ -182,6 +183,11 @@ export default function SettingsPage() {
             <label className={labelCls}>Contact Email (shown to members)</label>
             <input className={inputCls} value={s.contactEmail} onChange={e => field('contactEmail', e.target.value)} placeholder="support@yoursite.com" />
             <p className="text-xs text-mute mt-1">Members use this to contact you. Payment-slip notifications are also sent here.</p>
+          </div>
+          <div>
+            <label className={labelCls}>Membership Card — Footer Note</label>
+            <input className={inputCls} value={s.cardFooterNote} onChange={e => field('cardFooterNote', e.target.value)} placeholder="เก็บบัตรนี้ไว้เป็นความลับ" />
+            <p className="text-xs text-mute mt-1">หมายเหตุที่แสดงล่างสุดของบัตรสมาชิก (ตามด้วยวันที่ออกบัตรอัตโนมัติ)</p>
           </div>
         </div>
       </section>

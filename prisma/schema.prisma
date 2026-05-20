@@ -174,6 +174,9 @@ model SiteSettings {
   bankAccount   String  @default("")
   paymentQrUrl  String?
 
+  // Membership card footer note
+  cardFooterNote String @default("เก็บบัตรนี้ไว้เป็นความลับ")
+
   updatedAt DateTime @updatedAt
 }
 

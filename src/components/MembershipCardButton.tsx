@@ -31,6 +31,7 @@ function buildCardHtml(opts: {
   email: string
   membershipStart: string | null
   membershipExpiry: string | null
+  footerNote: string
 }): string {
   const start = opts.membershipStart ? formatDate(opts.membershipStart) : '-'
   const expiry = opts.membershipExpiry ? formatDate(opts.membershipExpiry) : 'ไม่จำกัด'
@@ -110,7 +111,7 @@ function buildCardHtml(opts: {
       <li>กด <b>แจ้งชำระเงิน</b> และอัปโหลดสลิป รอแอดมินยืนยัน</li>
     </ol>
 
-    <div class="foot">เก็บบัตรนี้ไว้เป็นความลับ • ออกเมื่อ ${formatDate(new Date().toISOString())}</div>
+    <div class="foot">${opts.footerNote ? escapeHtml(opts.footerNote) + ' • ' : ''}ออกเมื่อ ${formatDate(new Date().toISOString())}</div>
   </div>
   <script>window.onload = function(){ setTimeout(function(){ window.focus(); window.print(); }, 250); };</script>
 </body>
@@ -147,9 +148,11 @@ export function MembershipCardButton({ user }: { user: CardUser }) {
       }
 
       let siteTitle = 'SecureFiles'
+      let footerNote = ''
       try {
         const s = await fetch('/api/public-settings').then(r => r.json())
         if (s?.siteTitle) siteTitle = s.siteTitle
+        if (typeof s?.cardFooterNote === 'string') footerNote = s.cardFooterNote
       } catch { /* default */ }
 
       const html = buildCardHtml({
@@ -160,6 +163,7 @@ export function MembershipCardButton({ user }: { user: CardUser }) {
         email: user.email,
         membershipStart: user.membershipStart,
         membershipExpiry: user.membershipExpiry,
+        footerNote,
       })
 
       const w = window.open('', '_blank', 'width=620,height=860')

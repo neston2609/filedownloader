@@ -11,6 +11,7 @@ export async function GET() {
       siteTitle: 'SecureFiles',
       heroHeading: 'Download anything, from anywhere',
       heroSubheading: 'Secure, members-only file downloads.',
+      cardFooterNote: '',
     })
   }
 }

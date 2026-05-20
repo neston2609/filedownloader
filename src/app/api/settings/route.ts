@@ -50,6 +50,7 @@ export async function PATCH(req: NextRequest) {
       ...(body.smtpFromName !== undefined && { smtpFromName: body.smtpFromName }),
       ...(body.contactEmail !== undefined && { contactEmail: body.contactEmail }),
       ...(body.bankAccount !== undefined && { bankAccount: body.bankAccount }),
+      ...(body.cardFooterNote !== undefined && { cardFooterNote: body.cardFooterNote }),
     },
   })
 
