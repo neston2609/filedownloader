@@ -52,6 +52,7 @@ export async function PATCH(req: NextRequest) {
       ...(body.bankAccount !== undefined && { bankAccount: body.bankAccount }),
       ...(body.cardFooterNote !== undefined && { cardFooterNote: body.cardFooterNote }),
       ...(body.memberOnlyNotice !== undefined && { memberOnlyNotice: body.memberOnlyNotice }),
+      ...(body.loginUnverifiedNotice !== undefined && { loginUnverifiedNotice: body.loginUnverifiedNotice }),
     },
   })
 

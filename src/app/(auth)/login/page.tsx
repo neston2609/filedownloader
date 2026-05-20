@@ -23,6 +23,21 @@ function LoginForm() {
     setError('')
     setLoading(true)
 
+    // Pre-check account state so we can show a helpful message instead of
+    // NextAuth's generic "Configuration" error for unconfirmed/pending users.
+    try {
+      const pre = await fetch('/api/auth/precheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: email }),
+      }).then(r => r.json())
+      if (pre?.status === 'unverified' || pre?.status === 'pending') {
+        setError(pre.message ?? 'Please confirm your email before signing in.')
+        setLoading(false)
+        return
+      }
+    } catch { /* fall through to signIn */ }
+
     const result = await signIn('credentials', {
       email,
       password,
@@ -34,7 +49,7 @@ function LoginForm() {
     if (result?.error) {
       setError(result.error === 'CredentialsSignin'
         ? 'Invalid username/email or password'
-        : result.error)
+        : 'Invalid username/email or password')
     } else {
       router.push('/download')
       router.refresh()

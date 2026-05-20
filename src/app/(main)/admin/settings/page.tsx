@@ -19,6 +19,7 @@ interface Settings {
   paymentQrUrl: string | null
   cardFooterNote: string
   memberOnlyNotice: string
+  loginUnverifiedNotice: string
   hasSmtpPassword?: boolean
 }
 
@@ -200,6 +201,11 @@ export default function SettingsPage() {
             <label className={labelCls}>Members-Only Notice (ปุ่ม Download/Play ที่ถูกล็อก)</label>
             <input className={inputCls} value={s.memberOnlyNotice} onChange={e => field('memberOnlyNotice', e.target.value)} placeholder="สำหรับสมาชิกเท่านั้น ศึกษารายละเอียดได้ที่หน้า Subscription" />
             <p className="text-xs text-mute mt-1">ข้อความที่แสดงเมื่อผู้ใช้ที่ยังไม่มีสิทธิ์เอาเมาส์ชี้/กดปุ่ม Download หรือ Play</p>
+          </div>
+          <div>
+            <label className={labelCls}>Login — Email Not Confirmed Message</label>
+            <input className={inputCls} value={s.loginUnverifiedNotice} onChange={e => field('loginUnverifiedNotice', e.target.value)} placeholder="กรุณายืนยันการสมัครผ่านลิงก์ที่ส่งไปยังอีเมลของคุณ" />
+            <p className="text-xs text-mute mt-1">ข้อความที่แสดงตอน login ถ้าสมาชิกยังไม่ได้ยืนยันอีเมล</p>
           </div>
         </div>
       </section>
