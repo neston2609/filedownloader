@@ -60,6 +60,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const ext = applyExtension(user, request.months)
     const finalExpiry = membershipExpiry(ext)
 
+    // Groups not tied to ANY package are hidden by default once a member pays
+    // (they can't be purchased, so don't show them). Skip groups the member
+    // already has an explicit setting for, and the group just purchased.
+    const [groupsNoPlan, existingGroupAccess] = await Promise.all([
+      prisma.categoryGroup.findMany({ where: { plans: { none: {} } }, select: { id: true } }),
+      prisma.userGroupAccess.findMany({ where: { userId: request.userId }, select: { groupId: true } }),
+    ])
+    const existingGroups = new Set(existingGroupAccess.map((g) => g.groupId))
+    const hideGroups = groupsNoPlan.filter((g) => g.id !== request.groupId && !existingGroups.has(g.id))
+
     await prisma.$transaction([
       prisma.subscriptionRequest.update({
         where: { id: params.id },
@@ -82,6 +92,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
             where: { userId_groupId: { userId: request.userId, groupId: request.groupId } },
             update: { granted: true, hidden: false },
             create: { userId: request.userId, groupId: request.groupId, granted: true, hidden: false, grantedBy: 'subscription' },
+          })]
+        : []),
+      // Hide groups that have no package by default
+      ...(hideGroups.length > 0
+        ? [prisma.userGroupAccess.createMany({
+            data: hideGroups.map((g) => ({
+              userId: request.userId, groupId: g.id, granted: false, hidden: true, grantedBy: 'system',
+            })),
+            skipDuplicates: true,
           })]
         : []),
     ])
