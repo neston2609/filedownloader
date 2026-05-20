@@ -5,6 +5,21 @@ import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, A
 import { formatBytes } from '@/lib/utils'
 import { isVideo } from '@/lib/media'
 
+const COVER_RE = /^folder\.(jpg|jpeg|png|webp)$/i
+
+// Folder thumbnail: tries to load <folder>/folder.jpg as a cover image,
+// falling back to the folder icon if it 404s.
+function FolderThumb({ coverUrl }: { coverUrl: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return <Folder className="w-5 h-5 text-ink flex-shrink-0" />
+  return (
+    <span className="w-9 h-9 rounded-lg overflow-hidden bg-bg2 border border-line flex-shrink-0 -my-1.5">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={coverUrl} alt="" className="w-full h-full object-cover" onError={() => setFailed(true)} />
+    </span>
+  )
+}
+
 interface SmbEntry {
   name: string
   isDirectory: boolean
@@ -52,7 +67,9 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
         throw new Error(data.error ?? 'Failed to load directory')
       }
       const data = await res.json()
-      setEntries(data.entries ?? [])
+      // Hide folder-cover files (folder.jpg/png/...) — they're shown as the
+      // parent folder's thumbnail instead of listed as files.
+      setEntries((data.entries ?? []).filter((e: SmbEntry) => !(!e.isDirectory && COVER_RE.test(e.name))))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -92,6 +109,14 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
   function buildFilePath(file: SmbEntry): string {
     const sep = activePath?.protocol === 'smb' ? '\\' : '/'
     return folderParts.length > 0 ? `${folderParts.join(sep)}${sep}${file.name}` : file.name
+  }
+
+  function coverUrlFor(folderName: string): string {
+    if (!pathId) return ''
+    const sep = activePath?.protocol === 'smb' ? '\\' : '/'
+    const base = folderParts.length > 0 ? `${folderParts.join(sep)}${sep}${folderName}` : folderName
+    const filePath = `${base}${sep}folder.jpg`
+    return `/api/cover?categoryId=${encodeURIComponent(category.id)}&pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
   }
 
   async function handleDownload(file: SmbEntry) {
@@ -249,7 +274,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                 {entries.map((entry) => (
                   <div key={entry.name} className="flex items-center gap-3 px-4 py-3 hover:bg-bg2/50 transition-colors group">
                     {entry.isDirectory ? (
-                      <Folder className="w-5 h-5 text-ink flex-shrink-0" />
+                      <FolderThumb coverUrl={coverUrlFor(entry.name)} />
                     ) : (
                       <FileText className="w-5 h-5 text-ink flex-shrink-0" />
                     )}
