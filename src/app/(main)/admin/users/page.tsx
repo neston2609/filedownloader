@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { CheckCircle, XCircle, Trash2, Shield, UserCheck, ChevronDown, Plus, Mail, User as UserIcon, Lock, X, AlertCircle, Eye, EyeOff, CalendarClock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { membershipExpiry, isMembershipExpired, daysUntilExpiry, MEMBERSHIP_PRESETS } from '@/lib/membership'
+import { MembershipCardButton } from '@/components/MembershipCardButton'
 
 interface Category { id: string; name: string }
 interface User {
@@ -335,9 +336,18 @@ export default function UsersPage() {
                 <div className="border-t border-line p-4 bg-bg2/50 space-y-4">
                   {/* Membership window */}
                   <div>
-                    <h3 className="text-sm font-semibold text-ink mb-2 flex items-center gap-1.5">
-                      <CalendarClock className="w-3.5 h-3.5" /> Membership
-                    </h3>
+                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                      <h3 className="text-sm font-semibold text-ink flex items-center gap-1.5">
+                        <CalendarClock className="w-3.5 h-3.5" /> Membership
+                      </h3>
+                      <MembershipCardButton user={{
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        membershipStart: user.membershipStart,
+                        membershipExpiry: expiry ? expiry.toISOString() : null,
+                      }} />
+                    </div>
                     <div className="flex flex-wrap items-end gap-3 bg-paper border-[1.5px] border-ink rounded-lg p-3">
                       <div>
                         <label className="block text-[11px] font-mono uppercase tracking-wider text-mute mb-1">Start date</label>
