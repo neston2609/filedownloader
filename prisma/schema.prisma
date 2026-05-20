@@ -277,6 +277,17 @@ model SubscriptionRequest {
   plan MembershipPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
 }
 
+// Advertising banners shown at the bottom of pages. Clicking opens linkUrl
+// in a new tab (if set).
+model Banner {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  linkUrl   String   @default("")
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model DownloadLog {
   id           String   @id @default(cuid())
   userId       String
