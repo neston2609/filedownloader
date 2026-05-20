@@ -15,10 +15,13 @@ interface Req {
   id: string; planName: string; months: number; priceThb: number; status: string
   slipUrl: string | null; previousExpiry: string | null; newExpiry: string | null; createdAt: string
 }
+interface MyPackage { groupId: string; groupName: string; expiresAt: string | null }
 interface Props {
   plans: Plan[]
   currentExpiry: string | null
   expired: boolean
+  groupExpiry: Record<string, string | null>
+  myPackages: MyPackage[]
   bankAccount: string
   paymentQrUrl: string | null
   contactEmail: string
@@ -33,7 +36,7 @@ const STATUS_META: Record<string, { label: string; cls: string; icon: typeof Clo
   cancelled: { label: 'Cancelled', cls: 'bg-bg2 text-mute', icon: XCircle },
 }
 
-export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, paymentQrUrl, contactEmail, initialRequests }: Props) {
+export function SubscribeClient({ plans, expired, groupExpiry, myPackages, bankAccount, paymentQrUrl, contactEmail, initialRequests }: Props) {
   const [requests, setRequests] = useState<Req[]>(initialRequests)
   const [selected, setSelected] = useState<Plan | null>(null)
   const [creating, setCreating] = useState(false)
@@ -41,8 +44,16 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
   const [uploadingId, setUploadingId] = useState<string | null>(null)
 
   // Compute the new expiry for the selected plan (mirror of server logic)
+  // Per-package expiry: count from the plan's group current (non-expired)
+  // expiry; otherwise from today. Independent of other packages.
+  function planCurrentExpiry(plan: Plan): string | null {
+    if (plan.groupId && groupExpiry[plan.groupId]) return groupExpiry[plan.groupId]
+    return null
+  }
   function projectedExpiry(plan: Plan): Date {
-    const base = !currentExpiry || expired ? new Date() : new Date(currentExpiry)
+    const cur = planCurrentExpiry(plan)
+    const now = new Date()
+    const base = cur && new Date(cur).getTime() > now.getTime() ? new Date(cur) : now
     return addMonths(base, plan.months)
   }
 
@@ -117,13 +128,28 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
   return (
     <div>
       <h1 className="font-display text-4xl sm:text-5xl font-extrabold text-ink mb-1">Extend Membership</h1>
-      <p className="text-ink2 mb-2 text-lg">Choose a plan to {expired ? 'reactivate' : 'extend'} your access.</p>
-      <p className="text-sm text-mute mb-8 flex items-center gap-1.5">
-        <CalendarClock className="w-4 h-4" />
-        {currentExpiry
-          ? <>Current expiry: <strong className={expired ? 'text-retro-coral' : 'text-ink'}>{formatDate(currentExpiry)}{expired ? ' (expired)' : ''}</strong></>
-          : <>You currently have no active membership window.</>}
-      </p>
+      <p className="text-ink2 mb-6 text-lg">Choose a package to {expired ? 'reactivate' : 'extend'} your access. Each package expires independently.</p>
+
+      {/* My active packages */}
+      {myPackages.length > 0 && (
+        <div className="bg-paper border-[1.5px] border-ink rounded-retro p-4 mb-8 shadow-hard-sm">
+          <p className="text-sm font-semibold text-ink mb-2 flex items-center gap-1.5"><CalendarClock className="w-4 h-4" /> My Packages</p>
+          <div className="flex flex-wrap gap-2">
+            {myPackages.map(pkg => {
+              const exp = pkg.expiresAt ? new Date(pkg.expiresAt) : null
+              const isExp = exp ? exp.getTime() < Date.now() : false
+              return (
+                <span key={pkg.groupId} className={`inline-flex items-center gap-1.5 border-[1.5px] border-ink rounded-full px-3 py-1 text-xs ${isExp ? 'bg-retro-coral/20' : 'bg-retro-mint/30'}`}>
+                  <span className="font-semibold text-ink">{pkg.groupName}</span>
+                  <span className="text-ink2">
+                    {exp ? `${isExp ? 'หมดอายุแล้ว' : 'ถึง'} ${formatDate(pkg.expiresAt!)}` : 'ไม่จำกัด'}
+                  </span>
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {plans.length === 0 ? (
         <div className="bg-paper border-[1.5px] border-ink rounded-retro p-10 text-center shadow-hard">
@@ -181,8 +207,8 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
             <div className="bg-bg2 border-[1.5px] border-ink rounded-lg p-3">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-mute">Current expiry</p>
-              <p className="text-ink font-semibold mt-1">{currentExpiry ? formatDate(currentExpiry) : '—'}</p>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-mute">Current expiry {selected.groupName ? `(${selected.groupName})` : ''}</p>
+              <p className="text-ink font-semibold mt-1">{planCurrentExpiry(selected) ? formatDate(planCurrentExpiry(selected)!) : '—'}</p>
             </div>
             <div className="bg-bg2 border-[1.5px] border-ink rounded-lg p-3">
               <p className="text-[11px] font-mono uppercase tracking-wider text-mute">Plan</p>

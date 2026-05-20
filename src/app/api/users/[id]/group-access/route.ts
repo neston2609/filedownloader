@@ -12,20 +12,32 @@ async function requireAdmin() {
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { groupId, granted, hidden } = await req.json()
+  const { groupId, granted, hidden, expiresAt } = await req.json()
   if (!groupId) return NextResponse.json({ error: 'groupId required' }, { status: 400 })
+
+  // expiresAt: ISO string => date, '' or null => clear (unlimited), undefined => leave
+  let expiryVal: Date | null | undefined
+  if (expiresAt !== undefined) {
+    if (!expiresAt) expiryVal = null
+    else {
+      expiryVal = new Date(expiresAt)
+      if (Number.isNaN(expiryVal.getTime())) return NextResponse.json({ error: 'Invalid expiresAt' }, { status: 400 })
+    }
+  }
 
   const row = await prisma.userGroupAccess.upsert({
     where: { userId_groupId: { userId: params.id, groupId } },
     update: {
       ...(granted !== undefined && { granted: !!granted }),
       ...(hidden !== undefined && { hidden: !!hidden }),
+      ...(expiryVal !== undefined && { expiresAt: expiryVal }),
     },
     create: {
       userId: params.id,
       groupId,
       granted: granted === undefined ? true : !!granted,
       hidden: hidden === undefined ? false : !!hidden,
+      expiresAt: expiryVal ?? null,
       grantedBy: 'admin',
     },
   })

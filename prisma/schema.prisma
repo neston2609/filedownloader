@@ -99,6 +99,8 @@ model UserGroupAccess {
   groupId String
   granted Boolean @default(true)
   hidden  Boolean @default(false)
+  // Independent per-package expiry. null = no expiry (unlimited / admin grant).
+  expiresAt DateTime?
   grantedAt DateTime @default(now())
   grantedBy String?
 

@@ -7,7 +7,7 @@ import { MembershipCardButton } from '@/components/MembershipCardButton'
 
 interface Category { id: string; name: string; groupId: string | null }
 interface CategoryGroup { id: string; name: string }
-interface GroupAccess { groupId: string; granted: boolean; hidden: boolean }
+interface GroupAccess { groupId: string; granted: boolean; hidden: boolean; expiresAt: string | null }
 interface User {
   id: string; email: string; username: string; role: string
   isActive: boolean; paymentStatus: string; notes: string; createdAt: string
@@ -50,7 +50,7 @@ export default function UsersPage() {
     setUsers(updated)
   }
 
-  async function setGroupAccess(userId: string, groupId: string, patch: { granted?: boolean; hidden?: boolean }) {
+  async function setGroupAccess(userId: string, groupId: string, patch: { granted?: boolean; hidden?: boolean; expiresAt?: string | null }) {
     setSaving(`grp-${userId}-${groupId}`)
     await fetch(`/api/users/${userId}/group-access`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId, ...patch }),
@@ -443,39 +443,55 @@ export default function UsersPage() {
                       <p className="text-xs text-mute mb-2">
                         ตั้งระดับกลุ่ม — จะ <strong>Override</strong> การตั้งราย Category ของทุก Category ในกลุ่มนั้น
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                         {groups.map(g => {
                           const gs = groupMap.get(g.id)
                           const set = !!gs
+                          const grpExpired = gs?.granted && gs.expiresAt ? new Date(gs.expiresAt).getTime() < Date.now() : false
                           return (
-                            <div key={g.id} className={`flex items-center gap-1 rounded-lg border-[1.5px] overflow-hidden ${set ? 'border-retro-grape' : 'border-ink/40'}`}>
-                              <button
-                                onClick={() => setGroupAccess(user.id, g.id, { granted: !(gs?.granted), hidden: gs?.hidden ?? false })}
-                                disabled={saving === `grp-${user.id}-${g.id}` || gs?.hidden}
-                                className={`flex-1 flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all ${
-                                  gs?.granted ? 'bg-retro-mint/40 text-ink' : 'bg-paper text-mute hover:bg-bg2'
-                                }`}
-                              >
-                                {gs?.granted ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" /> : <XCircle className="w-3.5 h-3.5 flex-shrink-0" />}
-                                <span className="truncate">{g.name}</span>
-                                {set && <span className="text-[9px] font-mono bg-retro-grape/40 px-1 rounded">OVERRIDE</span>}
-                              </button>
-                              <button
-                                onClick={() => setGroupAccess(user.id, g.id, { hidden: !(gs?.hidden), granted: gs?.granted ?? false })}
-                                disabled={saving === `grp-${user.id}-${g.id}`}
-                                title="ซ่อนทุก Category ในกลุ่มนี้"
-                                className={`px-2 py-2 border-l-[1.5px] transition-colors ${gs?.hidden ? 'bg-retro-coral/20 border-retro-grape text-retro-coral' : 'bg-paper border-ink/40 text-mute hover:text-ink'}`}
-                              >
-                                {gs?.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                              {set && (
+                            <div key={g.id} className={`rounded-lg border-[1.5px] ${set ? 'border-retro-grape' : 'border-ink/40'} p-1.5`}>
+                              <div className="flex items-center gap-1">
                                 <button
-                                  onClick={() => clearGroupAccess(user.id, g.id)}
-                                  title="ล้าง override (กลับไปใช้ราย Category)"
-                                  className="px-2 py-2 border-l-[1.5px] border-ink/40 bg-paper text-mute hover:text-retro-coral"
+                                  onClick={() => setGroupAccess(user.id, g.id, { granted: !(gs?.granted), hidden: gs?.hidden ?? false })}
+                                  disabled={saving === `grp-${user.id}-${g.id}` || gs?.hidden}
+                                  className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-medium transition-all ${
+                                    gs?.granted ? 'bg-retro-mint/40 text-ink' : 'bg-paper text-mute hover:bg-bg2'
+                                  }`}
                                 >
-                                  <X className="w-3.5 h-3.5" />
+                                  {gs?.granted ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" /> : <XCircle className="w-3.5 h-3.5 flex-shrink-0" />}
+                                  <span className="truncate">{g.name}</span>
+                                  {set && <span className="text-[9px] font-mono bg-retro-grape/40 px-1 rounded">OVERRIDE</span>}
+                                  {grpExpired && <span className="text-[9px] font-mono bg-retro-coral text-white px-1 rounded">EXPIRED</span>}
                                 </button>
+                                <button
+                                  onClick={() => setGroupAccess(user.id, g.id, { hidden: !(gs?.hidden), granted: gs?.granted ?? false })}
+                                  disabled={saving === `grp-${user.id}-${g.id}`}
+                                  title="ซ่อนทุก Category ในกลุ่มนี้"
+                                  className={`px-2 py-1.5 rounded transition-colors ${gs?.hidden ? 'bg-retro-coral/20 text-retro-coral' : 'bg-paper text-mute hover:text-ink'}`}
+                                >
+                                  {gs?.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                                {set && (
+                                  <button
+                                    onClick={() => clearGroupAccess(user.id, g.id)}
+                                    title="ล้าง override (กลับไปใช้ราย Category)"
+                                    className="px-2 py-1.5 rounded bg-paper text-mute hover:text-retro-coral"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                              {gs?.granted && (
+                                <div className="flex items-center gap-1.5 mt-1.5 px-1">
+                                  <span className="text-[10px] text-mute whitespace-nowrap">หมดอายุ:</span>
+                                  <input
+                                    type="date"
+                                    value={gs.expiresAt ? new Date(gs.expiresAt).toISOString().slice(0, 10) : ''}
+                                    onChange={e => setGroupAccess(user.id, g.id, { expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                    className="text-[11px] border border-ink/40 rounded px-1.5 py-0.5 bg-bg2 text-ink"
+                                  />
+                                  {!gs.expiresAt && <span className="text-[10px] text-mute">(ไม่จำกัด)</span>}
+                                </div>
                               )}
                             </div>
                           )

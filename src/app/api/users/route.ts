@@ -24,7 +24,7 @@ const USER_SELECT = {
   membershipMonths: true,
   categoryAccess: { select: { categoryId: true } },
   hiddenCategories: { select: { categoryId: true } },
-  groupAccess: { select: { groupId: true, granted: true, hidden: true } },
+  groupAccess: { select: { groupId: true, granted: true, hidden: true, expiresAt: true } },
 } as const
 
 export async function GET() {

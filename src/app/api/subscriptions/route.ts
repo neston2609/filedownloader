@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { membershipExpiry, computeExtendedExpiry } from '@/lib/membership'
+import { membershipExpiry, computeExtendedExpiry, addMonths } from '@/lib/membership'
 
 // GET: members see their own requests; admins see all.
 export async function GET() {
@@ -44,8 +44,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'You already have pending requests. Please complete or cancel them first.' }, { status: 400 })
   }
 
-  const previousExpiry = membershipExpiry(user)
-  const newExpiry = computeExtendedExpiry(user, plan.months)
+  // Expiry is per-package (per-group) and independent. If the plan is tied to
+  // a group, count from that group's current (non-expired) expiry; otherwise
+  // fall back to the global membership window (legacy / no-group plans).
+  const now = new Date()
+  let previousExpiry: Date | null
+  let newExpiry: Date
+  if (plan.groupId) {
+    const gs = await prisma.userGroupAccess.findUnique({
+      where: { userId_groupId: { userId: session.user.id, groupId: plan.groupId } },
+    })
+    const active = gs?.granted && gs.expiresAt && gs.expiresAt.getTime() > now.getTime()
+    previousExpiry = active ? gs!.expiresAt : null
+    newExpiry = addMonths(previousExpiry ?? now, plan.months)
+  } else {
+    previousExpiry = membershipExpiry(user)
+    newExpiry = computeExtendedExpiry(user, plan.months)
+  }
 
   const request = await prisma.subscriptionRequest.create({
     data: {

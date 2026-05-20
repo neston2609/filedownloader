@@ -9,7 +9,7 @@ export default async function SubscribePage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const [user, plans, settings, requests] = await Promise.all([
+  const [user, plans, settings, requests, groupAccess] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { membershipStart: true, membershipMonths: true },
@@ -24,10 +24,25 @@ export default async function SubscribePage() {
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
     }),
+    prisma.userGroupAccess.findMany({
+      where: { userId: session.user.id, granted: true },
+      include: { group: { select: { id: true, name: true } } },
+    }),
   ])
 
   const expiry = user ? membershipExpiry(user) : null
   const expired = user ? isMembershipExpired(user) : false
+
+  // Per-package (group) expiry map for the client
+  const groupExpiry: Record<string, string | null> = {}
+  const myPackages = groupAccess.map((g) => {
+    groupExpiry[g.groupId] = g.expiresAt ? g.expiresAt.toISOString() : null
+    return {
+      groupId: g.groupId,
+      groupName: g.group?.name ?? 'Group',
+      expiresAt: g.expiresAt ? g.expiresAt.toISOString() : null,
+    }
+  })
 
   const qrUrl = settings.paymentQrUrl && settings.paymentQrUrl.startsWith('/uploads/')
     ? `/api${settings.paymentQrUrl}`
@@ -44,6 +59,8 @@ export default async function SubscribePage() {
       }))}
       currentExpiry={expiry ? expiry.toISOString() : null}
       expired={expired}
+      groupExpiry={groupExpiry}
+      myPackages={myPackages}
       bankAccount={settings.bankAccount}
       paymentQrUrl={qrUrl ?? null}
       contactEmail={settings.contactEmail}
