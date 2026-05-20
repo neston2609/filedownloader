@@ -31,6 +31,7 @@ model User {
   categoryAccess   UserCategoryAccess[]
   hiddenCategories UserHiddenCategory[]
   downloadLogs     DownloadLog[]
+  subscriptions    SubscriptionRequest[]
 }
 
 model SmbServer {
@@ -168,7 +169,46 @@ model SiteSettings {
   smtpFromEmail String  @default("")
   smtpFromName  String  @default("")
 
+  // Contact + payment
+  contactEmail  String  @default("")
+  bankAccount   String  @default("")
+  paymentQrUrl  String?
+
   updatedAt DateTime @updatedAt
+}
+
+// Subscription plans an admin offers. priceThb is whole Thai Baht.
+model MembershipPlan {
+  id        String  @id @default(cuid())
+  name      String
+  months    Int
+  priceThb  Int
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+  createdAt DateTime @default(now())
+
+  requests SubscriptionRequest[]
+}
+
+// A member's request to buy/extend a subscription.
+// status: wait_payment -> wait_confirm -> paid | failed
+model SubscriptionRequest {
+  id             String   @id @default(cuid())
+  userId         String
+  planId         String?
+  planName       String
+  months         Int
+  priceThb       Int
+  status         String   @default("wait_payment")
+  slipUrl        String?
+  previousExpiry DateTime?
+  newExpiry      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  paidAt         DateTime?
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan MembershipPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
 }
 
 model DownloadLog {

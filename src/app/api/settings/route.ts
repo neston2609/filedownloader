@@ -48,6 +48,8 @@ export async function PATCH(req: NextRequest) {
       ...(body.smtpPassword ? { smtpPassword: body.smtpPassword } : {}),
       ...(body.smtpFromEmail !== undefined && { smtpFromEmail: body.smtpFromEmail }),
       ...(body.smtpFromName !== undefined && { smtpFromName: body.smtpFromName }),
+      ...(body.contactEmail !== undefined && { contactEmail: body.contactEmail }),
+      ...(body.bankAccount !== undefined && { bankAccount: body.bankAccount }),
     },
   })
 

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { CalendarClock, X } from 'lucide-react'
+import Link from 'next/link'
+import { CalendarClock, X, CreditCard } from 'lucide-react'
 
 export function ExpiredPopup({ expiryDate }: { expiryDate: string | null }) {
   const [open, setOpen] = useState(true)
@@ -30,12 +31,20 @@ export function ExpiredPopup({ expiryDate }: { expiryDate: string | null }) {
           Please contact the administrator to renew and restore your access.
         </p>
 
-        <button
-          onClick={() => setOpen(false)}
-          className="btn-retro mt-5 inline-flex items-center justify-center gap-2 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-6 py-2.5 rounded-full"
-        >
-          Understood
-        </button>
+        <div className="flex items-center justify-center gap-2 mt-5">
+          <Link
+            href="/subscribe"
+            className="btn-retro inline-flex items-center justify-center gap-2 bg-retro-coral text-white border-[1.5px] border-ink font-semibold px-5 py-2.5 rounded-full"
+          >
+            <CreditCard className="w-4 h-4" /> Renew now
+          </Link>
+          <button
+            onClick={() => setOpen(false)}
+            className="btn-retro inline-flex items-center justify-center gap-2 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-5 py-2.5 rounded-full"
+          >
+            Later
+          </button>
+        </div>
       </div>
     </div>
   )

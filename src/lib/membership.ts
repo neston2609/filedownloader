@@ -28,6 +28,41 @@ export function daysUntilExpiry(user: MembershipFields, now: Date = new Date()):
   return Math.ceil(ms / (1000 * 60 * 60 * 24))
 }
 
+export function addMonths(date: Date, months: number): Date {
+  const d = new Date(date)
+  d.setMonth(d.getMonth() + months)
+  return d
+}
+
+// Compute the new expiry when extending by `months`. If the member is
+// currently expired (or has no membership), count from today; otherwise
+// count from their current expiry date.
+export function computeExtendedExpiry(user: MembershipFields, months: number, now: Date = new Date()): Date {
+  const current = membershipExpiry(user)
+  const base = !current || isMembershipExpired(user, now) ? now : current
+  return addMonths(base, months)
+}
+
+// Given the current membership and a number of months to add, return the new
+// {membershipStart, membershipMonths} pair. Keeps the original start when
+// still active (so the day-of-month is preserved); resets to `now` when
+// expired.
+export function applyExtension(
+  user: MembershipFields,
+  months: number,
+  now: Date = new Date()
+): { membershipStart: Date; membershipMonths: number } {
+  const current = membershipExpiry(user)
+  const expired = !current || isMembershipExpired(user, now) || !user.membershipStart || user.membershipMonths == null
+  if (expired) {
+    return { membershipStart: now, membershipMonths: months }
+  }
+  return {
+    membershipStart: new Date(user.membershipStart!),
+    membershipMonths: (user.membershipMonths ?? 0) + months,
+  }
+}
+
 // Preset membership lengths offered in the admin UI
 export const MEMBERSHIP_PRESETS: { label: string; months: number | null }[] = [
   { label: '1 Month', months: 1 },

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
-import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavBarProps {
@@ -44,12 +44,15 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
     ...(isAdmin ? [
       { href: '/admin', label: 'Dashboard', icon: Settings },
       { href: '/admin/users', label: 'Users', icon: Users },
-    ] : []),
+    ] : [
+      { href: '/subscribe', label: 'Subscribe', icon: CreditCard },
+    ]),
   ]
 
   const adminTailItems = isAdmin ? [
     { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { href: '/admin/affiliate', label: 'Affiliate', icon: Link2 },
+    { href: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
     { href: '/admin/settings', label: 'Settings', icon: SlidersHorizontal },
   ] : []
 
