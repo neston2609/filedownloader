@@ -14,13 +14,13 @@ interface NavBarProps {
 export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
   const pathname = usePathname()
   const isAdmin = user.role === 'ADMIN'
-  const [fileServicesOpen, setFileServicesOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setFileServicesOpen(false)
+        setSettingsOpen(false)
       }
     }
     document.addEventListener('mousedown', onClickOutside)
@@ -28,33 +28,51 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
   }, [])
 
   useEffect(() => {
-    setFileServicesOpen(false)
+    setSettingsOpen(false)
   }, [pathname])
 
-  const fileServicesItems = [
-    { href: '/admin/smb', label: 'SMB', desc: 'Windows / Samba shares', icon: HardDrive, swatch: 'bg-retro-sky' },
-    { href: '/admin/ftp?type=ftp', label: 'FTP', desc: 'Plain File Transfer Protocol', icon: Server, swatch: 'bg-retro-lemon' },
-    { href: '/admin/ftp?type=ftps', label: 'FTPS', desc: 'FTP over TLS', icon: Lock, swatch: 'bg-retro-mint' },
-    { href: '/admin/scp', label: 'SCP / SFTP', desc: 'SSH file transfer', icon: Terminal, swatch: 'bg-retro-grape' },
+  // Everything an admin configures lives under one Settings dropdown.
+  const settingsSections = [
+    {
+      title: 'Members',
+      items: [
+        { href: '/admin/users', label: 'Users', desc: 'Accounts, access & membership', icon: Users, swatch: 'bg-retro-sky' },
+        { href: '/admin/subscriptions', label: 'Subscriptions', desc: 'Payment requests & approval', icon: CreditCard, swatch: 'bg-retro-mint' },
+      ],
+    },
+    {
+      title: 'Content',
+      items: [
+        { href: '/admin/categories', label: 'Categories', desc: 'Categories, groups & paths', icon: FolderOpen, swatch: 'bg-retro-lemon' },
+        { href: '/admin/affiliate', label: 'Affiliate', desc: 'Global affiliate link', icon: Link2, swatch: 'bg-retro-coral' },
+      ],
+    },
+    {
+      title: 'File Services',
+      items: [
+        { href: '/admin/smb', label: 'SMB', desc: 'Windows / Samba shares', icon: HardDrive, swatch: 'bg-retro-sky' },
+        { href: '/admin/ftp?type=ftp', label: 'FTP', desc: 'File Transfer Protocol', icon: Server, swatch: 'bg-retro-lemon' },
+        { href: '/admin/ftp?type=ftps', label: 'FTPS', desc: 'FTP over TLS', icon: Lock, swatch: 'bg-retro-mint' },
+        { href: '/admin/scp', label: 'SCP / SFTP', desc: 'SSH file transfer', icon: Terminal, swatch: 'bg-retro-grape' },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { href: '/admin/settings', label: 'Site Settings', desc: 'Branding, SMTP, payment, plans', icon: SlidersHorizontal, swatch: 'bg-retro-grape' },
+      ],
+    },
   ]
-  const fileServicesActive = ['/admin/smb', '/admin/ftp', '/admin/scp'].some(p => pathname.startsWith(p))
+
+  // The Settings dropdown is "active" on any /admin/* page except the dashboard.
+  const settingsActive = pathname.startsWith('/admin/')
 
   const navItems = [
     { href: '/download', label: 'Downloads', icon: Download },
-    ...(isAdmin ? [
-      { href: '/admin', label: 'Dashboard', icon: Settings },
-      { href: '/admin/users', label: 'Users', icon: Users },
-    ] : [
-      { href: '/subscribe', label: 'Subscribe', icon: CreditCard },
-    ]),
+    ...(isAdmin
+      ? [{ href: '/admin', label: 'Dashboard', icon: Settings }]
+      : [{ href: '/subscribe', label: 'Subscribe', icon: CreditCard }]),
   ]
-
-  const adminTailItems = isAdmin ? [
-    { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
-    { href: '/admin/affiliate', label: 'Affiliate', icon: Link2 },
-    { href: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
-    { href: '/admin/settings', label: 'Settings', icon: SlidersHorizontal },
-  ] : []
 
   const linkClass = (active: boolean) => cn(
     'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border-[1.5px]',
@@ -91,55 +109,49 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
               {isAdmin && (
                 <div ref={dropdownRef} className="relative">
                   <button
-                    onClick={() => setFileServicesOpen(o => !o)}
-                    className={linkClass(fileServicesActive)}
+                    onClick={() => setSettingsOpen(o => !o)}
+                    className={linkClass(settingsActive)}
                   >
-                    <Server className="w-4 h-4" />
-                    <span className="hidden md:block">File Services</span>
-                    <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', fileServicesOpen && 'rotate-180')} />
+                    <SlidersHorizontal className="w-4 h-4" />
+                    <span className="hidden md:block">Settings</span>
+                    <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', settingsOpen && 'rotate-180')} />
                   </button>
 
-                  {fileServicesOpen && (
-                    <div className="absolute left-0 top-full mt-2 w-72 bg-paper rounded-2xl border-[1.5px] border-ink shadow-hard-lg overflow-hidden z-50">
-                      <div className="px-4 py-2 bg-bg2 border-b border-ink">
-                        <p className="text-[11px] uppercase font-mono font-semibold text-ink2 tracking-wider">Protocols</p>
-                      </div>
-                      {fileServicesItems.map(({ href, label, desc, icon: Icon, swatch }) => {
-                        const cleanHref = href.split('?')[0]
-                        const active = pathname.startsWith(cleanHref)
-                        return (
-                          <Link
-                            key={href}
-                            href={href}
-                            className={cn(
-                              'flex items-start gap-3 px-4 py-3 hover:bg-bg transition-colors border-l-4 border-b border-line last:border-b-0',
-                              active ? 'border-l-ink bg-bg2/60' : 'border-l-transparent'
-                            )}
-                          >
-                            <span className={cn('w-9 h-9 rounded-xl grid place-items-center border-[1.5px] border-ink flex-shrink-0', swatch)}>
-                              <Icon className="w-4 h-4 text-ink" />
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-ink">{label}</p>
-                              <p className="text-xs text-ink2">{desc}</p>
-                            </div>
-                          </Link>
-                        )
-                      })}
+                  {settingsOpen && (
+                    <div className="absolute left-0 top-full mt-2 w-72 bg-paper rounded-2xl border-[1.5px] border-ink shadow-hard-lg overflow-hidden z-50 max-h-[80vh] overflow-y-auto">
+                      {settingsSections.map((section) => (
+                        <div key={section.title}>
+                          <div className="px-4 py-2 bg-bg2 border-b border-ink">
+                            <p className="text-[11px] uppercase font-mono font-semibold text-ink2 tracking-wider">{section.title}</p>
+                          </div>
+                          {section.items.map(({ href, label, desc, icon: Icon, swatch }) => {
+                            const cleanHref = href.split('?')[0]
+                            const active = pathname === cleanHref || pathname.startsWith(cleanHref + '/')
+                            return (
+                              <Link
+                                key={href}
+                                href={href}
+                                className={cn(
+                                  'flex items-start gap-3 px-4 py-2.5 hover:bg-bg transition-colors border-l-4 border-b border-line',
+                                  active ? 'border-l-ink bg-bg2/60' : 'border-l-transparent'
+                                )}
+                              >
+                                <span className={cn('w-9 h-9 rounded-xl grid place-items-center border-[1.5px] border-ink flex-shrink-0', swatch)}>
+                                  <Icon className="w-4 h-4 text-ink" />
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-ink">{label}</p>
+                                  <p className="text-xs text-ink2">{desc}</p>
+                                </div>
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
               )}
-
-              {adminTailItems.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href || pathname.startsWith(href + '/')
-                return (
-                  <Link key={href} href={href} className={linkClass(active)}>
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden md:block">{label}</span>
-                  </Link>
-                )
-              })}
             </div>
           </div>
 
