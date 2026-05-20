@@ -60,12 +60,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const ext = applyExtension(user, request.months)
     const finalExpiry = membershipExpiry(ext)
 
-    // If the plan was tied to a category group, find all categories in that
-    // group so we can grant access to each one.
-    const groupCategories = request.groupId
-      ? await prisma.category.findMany({ where: { groupId: request.groupId }, select: { id: true } })
-      : []
-
     await prisma.$transaction([
       prisma.subscriptionRequest.update({
         where: { id: params.id },
@@ -81,16 +75,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           paymentStatus: 'paid',
         },
       }),
-      // Grant access to every category in the plan's group. createMany +
-      // skipDuplicates is idempotent against the @@unique(userId, categoryId).
-      ...(groupCategories.length > 0
-        ? [prisma.userCategoryAccess.createMany({
-            data: groupCategories.map((c) => ({
-              userId: request.userId,
-              categoryId: c.id,
-              grantedBy: 'subscription',
-            })),
-            skipDuplicates: true,
+      // Grant access at the GROUP level — one override row unlocks every
+      // category in the group (now and any added later). Idempotent upsert.
+      ...(request.groupId
+        ? [prisma.userGroupAccess.upsert({
+            where: { userId_groupId: { userId: request.userId, groupId: request.groupId } },
+            update: { granted: true, hidden: false },
+            create: { userId: request.userId, groupId: request.groupId, granted: true, hidden: false, grantedBy: 'subscription' },
           })]
         : []),
     ])

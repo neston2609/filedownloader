@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, Trash2, Shield, UserCheck, ChevronDown, Plus, Mail, User as UserIcon, Lock, X, AlertCircle, Eye, EyeOff, CalendarClock } from 'lucide-react'
+import { CheckCircle, XCircle, Trash2, Shield, UserCheck, ChevronDown, Plus, Mail, User as UserIcon, Lock, X, AlertCircle, Eye, EyeOff, CalendarClock, Layers } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { membershipExpiry, isMembershipExpired, daysUntilExpiry, MEMBERSHIP_PRESETS } from '@/lib/membership'
 import { MembershipCardButton } from '@/components/MembershipCardButton'
 
-interface Category { id: string; name: string }
+interface Category { id: string; name: string; groupId: string | null }
+interface CategoryGroup { id: string; name: string }
+interface GroupAccess { groupId: string; granted: boolean; hidden: boolean }
 interface User {
   id: string; email: string; username: string; role: string
   isActive: boolean; paymentStatus: string; notes: string; createdAt: string
@@ -13,6 +15,7 @@ interface User {
   membershipMonths: number | null
   categoryAccess: { categoryId: string }[]
   hiddenCategories: { categoryId: string }[]
+  groupAccess: GroupAccess[]
 }
 
 const EMPTY_NEW = { email: '', username: '', password: '', role: 'MEMBER', isActive: true, paymentStatus: 'pending' }
@@ -20,6 +23,7 @@ const EMPTY_NEW = { email: '', username: '', password: '', role: 'MEMBER', isAct
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [groups, setGroups] = useState<CategoryGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedUser, setExpandedUser] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
@@ -33,8 +37,36 @@ export default function UsersPage() {
     Promise.all([
       fetch('/api/users').then(r => r.json()),
       fetch('/api/categories').then(r => r.json()),
-    ]).then(([u, c]) => { setUsers(u); setCategories(c) }).finally(() => setLoading(false))
+      fetch('/api/category-groups').then(r => r.json()),
+    ]).then(([u, c, g]) => {
+      setUsers(u)
+      setCategories(c)
+      setGroups(Array.isArray(g) ? g : [])
+    }).finally(() => setLoading(false))
   }, [])
+
+  async function refreshUsers() {
+    const updated = await fetch('/api/users').then(r => r.json())
+    setUsers(updated)
+  }
+
+  async function setGroupAccess(userId: string, groupId: string, patch: { granted?: boolean; hidden?: boolean }) {
+    setSaving(`grp-${userId}-${groupId}`)
+    await fetch(`/api/users/${userId}/group-access`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId, ...patch }),
+    })
+    await refreshUsers()
+    setSaving(null)
+  }
+
+  async function clearGroupAccess(userId: string, groupId: string) {
+    setSaving(`grp-${userId}-${groupId}`)
+    await fetch(`/api/users/${userId}/group-access`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId }),
+    })
+    await refreshUsers()
+    setSaving(null)
+  }
 
   async function updateUser(id: string, patch: Partial<User>) {
     setSaving(id)
@@ -249,6 +281,7 @@ export default function UsersPage() {
         {users.map(user => {
           const accessSet = new Set(user.categoryAccess.map(a => a.categoryId))
           const hiddenSet = new Set(user.hiddenCategories.map(h => h.categoryId))
+          const groupMap = new Map(user.groupAccess.map(g => [g.groupId, g]))
           const isExpanded = expandedUser === user.id
           const expiry = membershipExpiry(user)
           const expired = isMembershipExpired(user)
@@ -401,23 +434,77 @@ export default function UsersPage() {
                     </div>
                   </div>
 
+                  {/* Group-level access & visibility (overrides per-category) */}
+                  {groups.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-ink mb-2 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-retro-grape" /> Group Access &amp; Visibility
+                      </h3>
+                      <p className="text-xs text-mute mb-2">
+                        ตั้งระดับกลุ่ม — จะ <strong>Override</strong> การตั้งราย Category ของทุก Category ในกลุ่มนั้น
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {groups.map(g => {
+                          const gs = groupMap.get(g.id)
+                          const set = !!gs
+                          return (
+                            <div key={g.id} className={`flex items-center gap-1 rounded-lg border-[1.5px] overflow-hidden ${set ? 'border-retro-grape' : 'border-ink/40'}`}>
+                              <button
+                                onClick={() => setGroupAccess(user.id, g.id, { granted: !(gs?.granted), hidden: gs?.hidden ?? false })}
+                                disabled={saving === `grp-${user.id}-${g.id}` || gs?.hidden}
+                                className={`flex-1 flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all ${
+                                  gs?.granted ? 'bg-retro-mint/40 text-ink' : 'bg-paper text-mute hover:bg-bg2'
+                                }`}
+                              >
+                                {gs?.granted ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" /> : <XCircle className="w-3.5 h-3.5 flex-shrink-0" />}
+                                <span className="truncate">{g.name}</span>
+                                {set && <span className="text-[9px] font-mono bg-retro-grape/40 px-1 rounded">OVERRIDE</span>}
+                              </button>
+                              <button
+                                onClick={() => setGroupAccess(user.id, g.id, { hidden: !(gs?.hidden), granted: gs?.granted ?? false })}
+                                disabled={saving === `grp-${user.id}-${g.id}`}
+                                title="ซ่อนทุก Category ในกลุ่มนี้"
+                                className={`px-2 py-2 border-l-[1.5px] transition-colors ${gs?.hidden ? 'bg-retro-coral/20 border-retro-grape text-retro-coral' : 'bg-paper border-ink/40 text-mute hover:text-ink'}`}
+                              >
+                                {gs?.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                              {set && (
+                                <button
+                                  onClick={() => clearGroupAccess(user.id, g.id)}
+                                  title="ล้าง override (กลับไปใช้ราย Category)"
+                                  className="px-2 py-2 border-l-[1.5px] border-ink/40 bg-paper text-mute hover:text-retro-coral"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <h3 className="text-sm font-semibold text-ink mb-2 flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5" /> Category Access &amp; Visibility
                     </h3>
                     <p className="text-xs text-mute mb-2">
                       Left button = grant download access. Eye toggle = hide the category from this member entirely.
+                      <span className="text-retro-grape"> Category ที่อยู่ในกลุ่มที่ตั้ง override จะถูกล็อก (จาง)</span>
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                       {categories.map(cat => {
-                        const has = accessSet.has(cat.id)
-                        const hidden = hiddenSet.has(cat.id)
+                        const overridden = !!(cat.groupId && groupMap.has(cat.groupId))
+                        const gs = cat.groupId ? groupMap.get(cat.groupId) : undefined
+                        const has = overridden ? !!gs?.granted : accessSet.has(cat.id)
+                        const hidden = overridden ? !!gs?.hidden : hiddenSet.has(cat.id)
                         const key = `${user.id}-${cat.id}`
                         return (
-                          <div key={cat.id} className={`flex items-center gap-1 rounded-lg border-[1.5px] overflow-hidden ${hidden ? 'border-ink/30 opacity-60' : 'border-ink'}`}>
+                          <div key={cat.id} className={`flex items-center gap-1 rounded-lg border-[1.5px] overflow-hidden ${hidden ? 'border-ink/30 opacity-60' : 'border-ink'} ${overridden ? 'opacity-60' : ''}`}>
                             <button
                               onClick={() => toggleAccess(user.id, cat.id, has)}
-                              disabled={saving === key || hidden}
+                              disabled={saving === key || hidden || overridden}
+                              title={overridden ? 'ถูกควบคุมโดยกลุ่ม (override)' : undefined}
                               className={`flex-1 flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all ${
                                 has
                                   ? 'bg-retro-sky/30 text-ink hover:bg-retro-sky'
@@ -426,11 +513,12 @@ export default function UsersPage() {
                             >
                               {has ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" /> : <XCircle className="w-3.5 h-3.5 flex-shrink-0" />}
                               <span className="truncate">{cat.name}</span>
+                              {overridden && <Layers className="w-3 h-3 text-retro-grape flex-shrink-0" />}
                             </button>
                             <button
                               onClick={() => toggleHidden(user.id, cat.id, hidden)}
-                              disabled={saving === `hide-${user.id}-${cat.id}`}
-                              title={hidden ? 'Category is hidden — click to show' : 'Click to hide this category from the member'}
+                              disabled={saving === `hide-${user.id}-${cat.id}` || overridden}
+                              title={overridden ? 'ถูกควบคุมโดยกลุ่ม (override)' : hidden ? 'Category is hidden — click to show' : 'Click to hide this category from the member'}
                               className={`px-2 py-2 border-l-[1.5px] transition-colors ${
                                 hidden
                                   ? 'bg-retro-coral/20 border-ink/30 text-retro-coral'

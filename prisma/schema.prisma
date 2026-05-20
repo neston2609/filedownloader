@@ -35,6 +35,7 @@ model User {
 
   categoryAccess   UserCategoryAccess[]
   hiddenCategories UserHiddenCategory[]
+  groupAccess      UserGroupAccess[]
   downloadLogs     DownloadLog[]
   subscriptions    SubscriptionRequest[]
 }
@@ -86,6 +87,25 @@ model CategoryGroup {
 
   categories Category[]
   plans      MembershipPlan[]
+  userAccess UserGroupAccess[]
+}
+
+// Group-level access/visibility override for a user. When a row exists for
+// (user, group), it overrides per-category access/hidden for every category
+// in that group. granted = access to all; hidden = hide all.
+model UserGroupAccess {
+  id      String  @id @default(cuid())
+  userId  String
+  groupId String
+  granted Boolean @default(true)
+  hidden  Boolean @default(false)
+  grantedAt DateTime @default(now())
+  grantedBy String?
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
 }
 
 model Category {

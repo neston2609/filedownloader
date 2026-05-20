@@ -8,10 +8,38 @@ export interface AccessResult {
   reason?: DenyReason
 }
 
+export interface CategoryState {
+  hasAccess: boolean
+  hidden: boolean
+}
+
+/**
+ * Resolve a user's access + hidden state for one category. A group-level
+ * setting (UserGroupAccess) for the category's group OVERRIDES the
+ * per-category setting. Categories with no group use per-category only.
+ */
+export async function resolveCategoryState(userId: string, categoryId: string): Promise<CategoryState> {
+  const cat = await prisma.category.findUnique({ where: { id: categoryId }, select: { groupId: true } })
+  const groupId = cat?.groupId ?? null
+
+  if (groupId) {
+    const gs = await prisma.userGroupAccess.findUnique({
+      where: { userId_groupId: { userId, groupId } },
+    })
+    if (gs) return { hasAccess: gs.granted, hidden: gs.hidden }
+  }
+
+  const [hidden, access] = await Promise.all([
+    prisma.userHiddenCategory.findUnique({ where: { userId_categoryId: { userId, categoryId } } }),
+    prisma.userCategoryAccess.findUnique({ where: { userId_categoryId: { userId, categoryId } } }),
+  ])
+  return { hasAccess: !!access, hidden: !!hidden }
+}
+
 /**
  * Central access check for a member viewing/downloading a category.
  * Admins always pass. Members must be: active, not expired, the category
- * not hidden for them, and explicitly granted access.
+ * not hidden for them, and granted access (per-category or via group).
  */
 export async function checkCategoryAccess(
   userId: string,
@@ -27,24 +55,17 @@ export async function checkCategoryAccess(
   if (!user || !user.isActive) return { allowed: false, reason: 'inactive' }
   if (isMembershipExpired(user)) return { allowed: false, reason: 'expired' }
 
-  const [hidden, access] = await Promise.all([
-    prisma.userHiddenCategory.findUnique({
-      where: { userId_categoryId: { userId, categoryId } },
-    }),
-    prisma.userCategoryAccess.findUnique({
-      where: { userId_categoryId: { userId, categoryId } },
-    }),
-  ])
+  const { hasAccess, hidden } = await resolveCategoryState(userId, categoryId)
   if (hidden) return { allowed: false, reason: 'hidden' }
-  if (!access) return { allowed: false, reason: 'no-access' }
+  if (!hasAccess) return { allowed: false, reason: 'no-access' }
 
   return { allowed: true }
 }
 
 /**
- * Lighter check for BROWSING (listing files). Members may now enter and
- * browse any category that isn't hidden from them — downloading/playing is
- * gated separately by checkCategoryAccess. Admins always pass.
+ * Lighter check for BROWSING (listing files). Members may enter and browse
+ * any category that isn't hidden from them (group override applies).
+ * Downloading/playing is gated separately by checkCategoryAccess.
  */
 export async function checkCategoryBrowse(
   userId: string,
@@ -53,9 +74,7 @@ export async function checkCategoryBrowse(
 ): Promise<AccessResult> {
   if (isAdmin) return { allowed: true }
 
-  const hidden = await prisma.userHiddenCategory.findUnique({
-    where: { userId_categoryId: { userId, categoryId } },
-  })
+  const { hidden } = await resolveCategoryState(userId, categoryId)
   if (hidden) return { allowed: false, reason: 'hidden' }
 
   return { allowed: true }

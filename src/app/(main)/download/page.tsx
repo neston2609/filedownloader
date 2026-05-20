@@ -15,25 +15,37 @@ export default async function DownloadPage() {
   const userId = session.user.id
   const isAdmin = session.user.role === 'ADMIN'
 
-  const [rawCategories, accessRecords, hiddenRecords, me] = await Promise.all([
+  const [rawCategories, accessRecords, hiddenRecords, groupRecords, me] = await Promise.all([
     prisma.category.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }),
     isAdmin ? [] : prisma.userCategoryAccess.findMany({ where: { userId }, select: { categoryId: true } }),
     isAdmin ? [] : prisma.userHiddenCategory.findMany({ where: { userId }, select: { categoryId: true } }),
+    isAdmin ? [] : prisma.userGroupAccess.findMany({ where: { userId }, select: { groupId: true, granted: true, hidden: true } }),
     isAdmin ? null : prisma.user.findUnique({ where: { id: userId }, select: { membershipStart: true, membershipMonths: true } }),
   ])
 
-  const hiddenSet = new Set(hiddenRecords.map((r: { categoryId: string }) => r.categoryId))
+  const perCatHidden = new Set(hiddenRecords.map((r: { categoryId: string }) => r.categoryId))
+  const perCatAccess = new Set(accessRecords.map((r: { categoryId: string }) => r.categoryId))
+  const groupMap = new Map(groupRecords.map((g) => [g.groupId, g]))
   const expired = me ? isMembershipExpired(me) : false
   const expiry = me ? membershipExpiry(me) : null
 
+  // Resolve access/hidden per category with group-level override.
+  function resolve(cat: { id: string; groupId: string | null }): { hasAccess: boolean; hidden: boolean } {
+    if (cat.groupId && groupMap.has(cat.groupId)) {
+      const gs = groupMap.get(cat.groupId)!
+      return { hasAccess: gs.granted, hidden: gs.hidden }
+    }
+    return { hasAccess: perCatAccess.has(cat.id), hidden: perCatHidden.has(cat.id) }
+  }
+
   const categories = rawCategories
-    .filter((c) => isAdmin || !hiddenSet.has(c.id)) // hide admin-hidden categories
+    .filter((c) => isAdmin || !resolve(c).hidden) // hide admin-hidden categories/groups
     .map((c) => ({
       ...c,
       imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/') ? `/api${c.imageUrl}` : c.imageUrl,
     }))
 
-  const accessSet = new Set(accessRecords.map((r: { categoryId: string }) => r.categoryId))
+  const accessSet = new Set(categories.filter((c) => isAdmin || resolve(c).hasAccess).map((c) => c.id))
 
   return (
     <div>
