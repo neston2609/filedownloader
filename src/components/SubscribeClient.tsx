@@ -229,7 +229,7 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
                     {canUpload && (
                       <label className="btn-retro inline-flex items-center gap-1.5 bg-retro-coral text-white border-[1.5px] border-ink font-semibold px-3 py-1.5 rounded-full text-xs cursor-pointer">
                         {uploadingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        {r.slipUrl ? 'Replace slip' : 'Upload slip'}
+                        {r.slipUrl ? 'แจ้งชำระเงินอีกครั้ง' : 'แจ้งชำระเงิน'}
                         <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" className="hidden"
                           onChange={e => { const f = e.target.files?.[0]; if (f) { uploadSlip(r.id, f); e.target.value = '' } }} />
                       </label>
