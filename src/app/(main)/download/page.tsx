@@ -119,19 +119,22 @@ export default async function DownloadPage() {
                     <p className="text-[15px] leading-relaxed text-mute/60 italic mb-4 flex-1">No description yet.</p>
                   )}
 
-                  {hasAccess ? (
+                  {expired ? (
+                    <Link
+                      href="/subscribe"
+                      className="btn-retro mt-auto inline-flex items-center justify-center gap-1.5 w-full bg-retro-coral text-white border-[1.5px] border-ink text-sm font-semibold py-2.5 rounded-full"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      ต่ออายุสมาชิก
+                    </Link>
+                  ) : (
                     <Link
                       href={`/download/${cat.id}`}
                       className="btn-retro mt-auto inline-flex items-center justify-center gap-1.5 w-full bg-ink text-retro-lime border-[1.5px] border-ink text-sm font-semibold py-2.5 rounded-full"
                     >
-                      Browse files
+                      {hasAccess ? 'Browse files' : 'Preview'}
                       <ChevronRight className="w-4 h-4" />
                     </Link>
-                  ) : (
-                    <div className="mt-auto inline-flex items-center justify-center gap-1.5 w-full bg-bg2 text-ink2 text-sm font-medium py-2.5 rounded-full border-[1.5px] border-ink/30 cursor-not-allowed">
-                      <Lock className="w-3.5 h-3.5" />
-                      Ask admin for access
-                    </div>
                   )}
                 </div>
               </div>

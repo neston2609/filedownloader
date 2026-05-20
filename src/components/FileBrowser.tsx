@@ -25,15 +25,18 @@ interface FileBrowserProps {
   initialPathId: string | null
   initialSubPath: string
   affiliateUrl: string | null
+  canDownload?: boolean
+  memberOnlyNotice?: string
 }
 
-export function FileBrowser({ category, paths, initialPathId, initialSubPath, affiliateUrl }: FileBrowserProps) {
+export function FileBrowser({ category, paths, initialPathId, initialSubPath, affiliateUrl, canDownload = true, memberOnlyNotice = '' }: FileBrowserProps) {
   const [entries, setEntries] = useState<SmbEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pathId, setPathId] = useState<string | null>(initialPathId)
   const [subPath, setSubPath] = useState(initialSubPath)
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
+  const [showNotice, setShowNotice] = useState(false)
 
   const activePath = paths.find((p) => p.id === pathId) ?? null
 
@@ -157,6 +160,18 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
         </div>
       </div>
 
+      {!canDownload && (
+        <div className="bg-retro-lemon/40 border-[1.5px] border-ink rounded-retro p-4 mb-6 shadow-hard-sm flex items-start gap-3">
+          <Lock className="w-5 h-5 text-ink flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-ink text-sm">{memberOnlyNotice}</p>
+            <Link href="/subscribe" className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-3 py-1.5 rounded-full text-xs mt-2">
+              ดูแพ็กเกจสมาชิก
+            </Link>
+          </div>
+        </div>
+      )}
+
       {paths.length === 0 ? (
         <div className="bg-retro-lemon/30 border border-ink/40 rounded-xl p-5 text-ink text-sm">
           No SMB or FTP paths are linked to this category yet.
@@ -252,25 +267,49 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                     </div>
 
                     {!entry.isDirectory && (
-                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                      <div className={`flex items-center gap-1.5 ${canDownload ? 'opacity-0 group-hover:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}>
                         {isVideo(entry.name) && (
+                          canDownload ? (
+                            <button
+                              onClick={() => handlePlay(entry)}
+                              title="Play in browser"
+                              className="btn-retro flex items-center gap-1.5 bg-retro-coral hover:bg-retro-coral text-ink border-[1.5px] border-ink text-xs font-semibold px-3 py-1.5 rounded-full"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                              Play
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowNotice(true)}
+                              title={memberOnlyNotice}
+                              className="flex items-center gap-1.5 bg-bg2 text-mute border-[1.5px] border-line text-xs font-semibold px-3 py-1.5 rounded-full cursor-not-allowed"
+                            >
+                              <Lock className="w-3.5 h-3.5" />
+                              Play
+                            </button>
+                          )
+                        )}
+                        {canDownload ? (
                           <button
-                            onClick={() => handlePlay(entry)}
-                            title="Play in browser"
-                            className="btn-retro flex items-center gap-1.5 bg-retro-coral hover:bg-retro-coral text-ink border-[1.5px] border-ink text-xs font-semibold px-3 py-1.5 rounded-full"
+                            onClick={() => handleDownload(entry)}
+                            disabled={downloadingFile === entry.name}
+                            className="btn-retro flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink disabled:opacity-60 text-xs font-semibold px-3 py-1.5 rounded-full"
                           >
-                            <Play className="w-3.5 h-3.5 fill-current" />
-                            Play
+                            {downloadingFile === entry.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                            Download
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowNotice(true)}
+                            title={memberOnlyNotice}
+                            className="flex items-center gap-1.5 bg-bg2 text-mute border-[1.5px] border-line text-xs font-semibold px-3 py-1.5 rounded-full cursor-not-allowed"
+                          >
+                            <Lock className="w-3.5 h-3.5" />
+                            Download
                           </button>
                         )}
-                        <button
-                          onClick={() => handleDownload(entry)}
-                          disabled={downloadingFile === entry.name}
-                          className="btn-retro flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink disabled:opacity-60 text-xs font-semibold px-3 py-1.5 rounded-full"
-                        >
-                          {downloadingFile === entry.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                          Download
-                        </button>
                       </div>
                     )}
                   </div>
@@ -279,12 +318,29 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
             )}
           </div>
 
-          {affiliateUrl && (
+          {affiliateUrl && canDownload && (
             <p className="text-xs text-mute mt-3 text-center">
               Downloads open a partner link in a new tab. Your download starts immediately after.
             </p>
           )}
         </>
+      )}
+
+      {showNotice && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm" onClick={() => setShowNotice(false)}>
+          <div className="bg-paper border-[1.5px] border-ink rounded-retro shadow-hard-lg max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-retro-lemon border-[1.5px] border-ink shadow-hard-sm mb-4">
+              <Lock className="w-7 h-7 text-ink" />
+            </div>
+            <p className="text-ink font-medium mb-5">{memberOnlyNotice}</p>
+            <div className="flex items-center justify-center gap-2">
+              <Link href="/subscribe" className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-5 py-2.5 rounded-full text-sm">
+                ดูแพ็กเกจสมาชิก
+              </Link>
+              <button onClick={() => setShowNotice(false)} className="text-ink2 px-4 py-2.5 rounded-full text-sm hover:bg-bg2 transition-colors">ปิด</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

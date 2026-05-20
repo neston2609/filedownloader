@@ -12,6 +12,7 @@ export async function GET() {
       heroHeading: 'Download anything, from anywhere',
       heroSubheading: 'Secure, members-only file downloads.',
       cardFooterNote: '',
+      memberOnlyNotice: 'สำหรับสมาชิกเท่านั้น ศึกษารายละเอียดได้ที่หน้า Subscription',
     })
   }
 }

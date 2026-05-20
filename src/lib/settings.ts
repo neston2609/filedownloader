@@ -17,5 +17,6 @@ export async function getPublicSiteSettings() {
     heroHeading: s.heroHeading,
     heroSubheading: s.heroSubheading,
     cardFooterNote: s.cardFooterNote,
+    memberOnlyNotice: s.memberOnlyNotice,
   }
 }

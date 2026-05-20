@@ -18,6 +18,7 @@ interface Settings {
   bankAccount: string
   paymentQrUrl: string | null
   cardFooterNote: string
+  memberOnlyNotice: string
   hasSmtpPassword?: boolean
 }
 
@@ -188,6 +189,11 @@ export default function SettingsPage() {
             <label className={labelCls}>Membership Card — Footer Note</label>
             <input className={inputCls} value={s.cardFooterNote} onChange={e => field('cardFooterNote', e.target.value)} placeholder="เก็บบัตรนี้ไว้เป็นความลับ" />
             <p className="text-xs text-mute mt-1">หมายเหตุที่แสดงล่างสุดของบัตรสมาชิก (ตามด้วยวันที่ออกบัตรอัตโนมัติ)</p>
+          </div>
+          <div>
+            <label className={labelCls}>Members-Only Notice (ปุ่ม Download/Play ที่ถูกล็อก)</label>
+            <input className={inputCls} value={s.memberOnlyNotice} onChange={e => field('memberOnlyNotice', e.target.value)} placeholder="สำหรับสมาชิกเท่านั้น ศึกษารายละเอียดได้ที่หน้า Subscription" />
+            <p className="text-xs text-mute mt-1">ข้อความที่แสดงเมื่อผู้ใช้ที่ยังไม่มีสิทธิ์เอาเมาส์ชี้/กดปุ่ม Download หรือ Play</p>
           </div>
         </div>
       </section>

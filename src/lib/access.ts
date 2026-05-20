@@ -41,6 +41,26 @@ export async function checkCategoryAccess(
   return { allowed: true }
 }
 
+/**
+ * Lighter check for BROWSING (listing files). Members may now enter and
+ * browse any category that isn't hidden from them — downloading/playing is
+ * gated separately by checkCategoryAccess. Admins always pass.
+ */
+export async function checkCategoryBrowse(
+  userId: string,
+  categoryId: string,
+  isAdmin: boolean
+): Promise<AccessResult> {
+  if (isAdmin) return { allowed: true }
+
+  const hidden = await prisma.userHiddenCategory.findUnique({
+    where: { userId_categoryId: { userId, categoryId } },
+  })
+  if (hidden) return { allowed: false, reason: 'hidden' }
+
+  return { allowed: true }
+}
+
 const STATUS_BY_REASON: Record<DenyReason, number> = {
   inactive: 403,
   expired: 403,

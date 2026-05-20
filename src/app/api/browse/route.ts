@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { listSmbDirectory } from '@/lib/smb'
 import { listFtpDirectory } from '@/lib/ftp'
 import { listScpDirectory } from '@/lib/scp'
-import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
+import { checkCategoryBrowse, accessDenyResponse } from '@/lib/access'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -17,9 +17,10 @@ export async function GET(req: NextRequest) {
 
   if (!categoryId) return NextResponse.json({ error: 'categoryId required' }, { status: 400 })
 
-  // Access check (active + not expired + not hidden + granted)
+  // Browse check — members can list files in any non-hidden category.
+  // Download/Play are gated separately (see /api/download, /api/stream).
   const isAdmin = session.user.role === 'ADMIN'
-  const access = await checkCategoryAccess(session.user.id, categoryId, isAdmin)
+  const access = await checkCategoryBrowse(session.user.id, categoryId, isAdmin)
   if (!access.allowed) {
     const deny = accessDenyResponse(access.reason!)
     return NextResponse.json(deny.body, { status: deny.status })

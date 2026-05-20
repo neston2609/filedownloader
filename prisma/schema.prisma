@@ -182,6 +182,9 @@ model SiteSettings {
   // Membership card footer note
   cardFooterNote String @default("เก็บบัตรนี้ไว้เป็นความลับ")
 
+  // Tooltip shown on disabled Download/Play buttons for non-members
+  memberOnlyNotice String @default("สำหรับสมาชิกเท่านั้น ศึกษารายละเอียดได้ที่หน้า Subscription")
+
   updatedAt DateTime @updatedAt
 }
 

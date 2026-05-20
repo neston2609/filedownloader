@@ -2,7 +2,8 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect, notFound } from 'next/navigation'
 import { FileBrowser } from '@/components/FileBrowser'
-import { checkCategoryAccess } from '@/lib/access'
+import { checkCategoryAccess, checkCategoryBrowse } from '@/lib/access'
+import { getPublicSiteSettings } from '@/lib/settings'
 
 interface Props {
   params: { categoryId: string }
@@ -26,13 +27,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   if (!category) notFound()
 
-  // Block if expired / hidden / no access. Redirect to /download where the
-  // member sees the appropriate message (expired banner or locked card).
+  // Members may enter & browse any non-hidden category. Hidden categories are
+  // still blocked (redirect away). Downloading/playing is gated by canDownload.
+  const browse = await checkCategoryBrowse(userId, params.categoryId, isAdmin)
+  if (!browse.allowed) redirect('/download')
+
   const access = await checkCategoryAccess(userId, params.categoryId, isAdmin)
-  if (!access.allowed) {
-    if (access.reason === 'expired') redirect('/download?expired=1')
-    redirect('/download')
-  }
+  const canDownload = access.allowed
+  const settings = await getPublicSiteSettings()
 
   // Merge SMB + FTP paths into a unified list
   const paths = [
@@ -59,8 +61,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   // Resolve affiliate URL
   let affiliateUrl: string | null = category.affiliateLinkOverride
   if (!affiliateUrl) {
-    const settings = await prisma.affiliateSettings.findFirst()
-    affiliateUrl = settings?.globalLink ?? null
+    const aff = await prisma.affiliateSettings.findFirst()
+    affiliateUrl = aff?.globalLink ?? null
   }
 
   const imageUrl = category.imageUrl && category.imageUrl.startsWith('/uploads/')
@@ -74,6 +76,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       initialPathId={searchParams.pathId ?? paths[0]?.id ?? null}
       initialSubPath={searchParams.path ?? ''}
       affiliateUrl={affiliateUrl || null}
+      canDownload={canDownload}
+      memberOnlyNotice={settings.memberOnlyNotice}
     />
   )
 }
