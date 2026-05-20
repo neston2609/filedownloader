@@ -11,6 +11,7 @@ const nextConfig = {
       'ssh2',
       'cpu-features',
       'ffmpeg-static',
+      'nodemailer',
     ],
   },
 

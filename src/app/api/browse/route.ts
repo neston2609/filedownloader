@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { listSmbDirectory } from '@/lib/smb'
 import { listFtpDirectory } from '@/lib/ftp'
 import { listScpDirectory } from '@/lib/scp'
+import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -16,13 +17,12 @@ export async function GET(req: NextRequest) {
 
   if (!categoryId) return NextResponse.json({ error: 'categoryId required' }, { status: 400 })
 
-  // Access check
+  // Access check (active + not expired + not hidden + granted)
   const isAdmin = session.user.role === 'ADMIN'
-  if (!isAdmin) {
-    const hasAccess = await prisma.userCategoryAccess.findUnique({
-      where: { userId_categoryId: { userId: session.user.id, categoryId } },
-    })
-    if (!hasAccess) return NextResponse.json({ error: 'Access denied to this category' }, { status: 403 })
+  const access = await checkCategoryAccess(session.user.id, categoryId, isAdmin)
+  if (!access.allowed) {
+    const deny = accessDenyResponse(access.reason!)
+    return NextResponse.json(deny.body, { status: deny.status })
   }
 
   // Try SMB first

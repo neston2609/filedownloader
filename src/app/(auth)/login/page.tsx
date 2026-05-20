@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -10,8 +10,13 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [branding, setBranding] = useState({ siteTitle: 'SecureFiles', heroHeading: '', heroSubheading: '' })
   const router = useRouter()
   const params = useSearchParams()
+
+  useEffect(() => {
+    fetch('/api/public-settings').then(r => r.json()).then(setBranding).catch(() => {})
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,9 +48,11 @@ function LoginForm() {
           <Lock className="w-7 h-7 text-retro-lime" />
         </div>
         <h1 className="font-display text-3xl text-ink leading-tight">
-          Welcome <span className="swatch bg-retro-lime">back</span>
+          {branding.siteTitle}
         </h1>
-        <p className="text-ink2 text-sm mt-2">Sign in to your member portal</p>
+        <p className="text-ink2 text-sm mt-2">
+          {branding.heroHeading || 'Sign in to your member portal'}
+        </p>
       </div>
 
       {params.get('error') === 'pending' && (

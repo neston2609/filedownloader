@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { sendMail, welcomeEmailHtml } from '@/lib/mailer'
+import { getSiteSettings } from '@/lib/settings'
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +26,20 @@ export async function POST(req: NextRequest) {
     await prisma.user.create({
       data: { email, username, password: hashed, isActive: false },
     })
+
+    // Send welcome email (best-effort — registration succeeds even if it fails)
+    try {
+      const settings = await getSiteSettings()
+      if (settings.smtpEnabled) {
+        await sendMail(
+          email,
+          `Welcome to ${settings.siteTitle}`,
+          welcomeEmailHtml({ username, siteTitle: settings.siteTitle })
+        )
+      }
+    } catch (mailErr) {
+      console.error('Welcome email failed (registration still succeeded):', mailErr)
+    }
 
     return NextResponse.json({ message: 'Registration submitted. Await admin approval.' }, { status: 201 })
   } catch {

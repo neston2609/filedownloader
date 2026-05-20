@@ -6,6 +6,7 @@ import { streamFtpFile } from '@/lib/ftp'
 import { streamScpFile } from '@/lib/scp'
 import { videoMimeType, isNativeBrowserVideo } from '@/lib/media'
 import { transcodeToMp4 } from '@/lib/transcode'
+import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
 import path from 'path'
 
 export async function GET(req: NextRequest) {
@@ -27,13 +28,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
   }
 
-  // Access check
+  // Access check (active + not expired + not hidden + granted)
   const isAdmin = session.user.role === 'ADMIN'
-  if (!isAdmin) {
-    const hasAccess = await prisma.userCategoryAccess.findUnique({
-      where: { userId_categoryId: { userId: session.user.id, categoryId } },
-    })
-    if (!hasAccess) return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+  const access = await checkCategoryAccess(session.user.id, categoryId, isAdmin)
+  if (!access.allowed) {
+    const deny = accessDenyResponse(access.reason!)
+    return NextResponse.json(deny.body, { status: deny.status })
   }
 
   const filename = path.basename(filePath)

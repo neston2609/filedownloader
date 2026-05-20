@@ -24,8 +24,13 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  categoryAccess UserCategoryAccess[]
-  downloadLogs   DownloadLog[]
+  // Membership window. membershipMonths = null means unlimited / no expiry.
+  membershipStart  DateTime?
+  membershipMonths Int?
+
+  categoryAccess   UserCategoryAccess[]
+  hiddenCategories UserHiddenCategory[]
+  downloadLogs     DownloadLog[]
 }
 
 model SmbServer {
@@ -78,6 +83,7 @@ model Category {
   ftpPaths     CategoryFtpPath[]
   scpPaths     CategoryScpPath[]
   userAccess   UserCategoryAccess[]
+  hiddenForUsers UserHiddenCategory[]
   downloadLogs DownloadLog[]
 }
 
@@ -128,6 +134,41 @@ model AffiliateSettings {
   id         String   @id @default(cuid())
   globalLink String   @default("")
   updatedAt  DateTime @updatedAt
+}
+
+// Per-user hidden categories. A row here means the category is hidden from
+// that member entirely (not just locked). Absence = visible (subject to the
+// normal access / locked rules).
+model UserHiddenCategory {
+  id         String @id @default(cuid())
+  userId     String
+  categoryId String
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+}
+
+// Singleton row holding site branding + SMTP config. There should only ever
+// be one row; the app reads findFirst() and creates it on demand.
+model SiteSettings {
+  id             String  @id @default(cuid())
+  siteTitle      String  @default("SecureFiles")
+  heroHeading    String  @default("Download anything, from anywhere")
+  heroSubheading String  @default("Secure, members-only file downloads.")
+
+  // SMTP / email
+  smtpEnabled   Boolean @default(false)
+  smtpHost      String  @default("")
+  smtpPort      Int     @default(587)
+  smtpSecure    Boolean @default(false)
+  smtpUser      String  @default("")
+  smtpPassword  String  @default("")
+  smtpFromEmail String  @default("")
+  smtpFromName  String  @default("")
+
+  updatedAt DateTime @updatedAt
 }
 
 model DownloadLog {

@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect, notFound } from 'next/navigation'
 import { FileBrowser } from '@/components/FileBrowser'
+import { checkCategoryAccess } from '@/lib/access'
 
 interface Props {
   params: { categoryId: string }
@@ -25,11 +26,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   if (!category) notFound()
 
-  if (!isAdmin) {
-    const access = await prisma.userCategoryAccess.findUnique({
-      where: { userId_categoryId: { userId, categoryId: params.categoryId } },
-    })
-    if (!access) redirect('/download')
+  // Block if expired / hidden / no access. Redirect to /download where the
+  // member sees the appropriate message (expired banner or locked card).
+  const access = await checkCategoryAccess(userId, params.categoryId, isAdmin)
+  if (!access.allowed) {
+    if (access.reason === 'expired') redirect('/download?expired=1')
+    redirect('/download')
   }
 
   // Merge SMB + FTP paths into a unified list

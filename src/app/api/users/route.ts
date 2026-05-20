@@ -20,7 +20,10 @@ const USER_SELECT = {
   paymentStatus: true,
   notes: true,
   createdAt: true,
+  membershipStart: true,
+  membershipMonths: true,
   categoryAccess: { select: { categoryId: true } },
+  hiddenCategories: { select: { categoryId: true } },
 } as const
 
 export async function GET() {

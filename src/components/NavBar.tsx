@@ -3,14 +3,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
-import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown } from 'lucide-react'
+import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavBarProps {
   user: { name: string; role: string }
+  siteTitle?: string
 }
 
-export function NavBar({ user }: NavBarProps) {
+export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
   const pathname = usePathname()
   const isAdmin = user.role === 'ADMIN'
   const [fileServicesOpen, setFileServicesOpen] = useState(false)
@@ -49,6 +50,7 @@ export function NavBar({ user }: NavBarProps) {
   const adminTailItems = isAdmin ? [
     { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { href: '/admin/affiliate', label: 'Affiliate', icon: Link2 },
+    { href: '/admin/settings', label: 'Settings', icon: SlidersHorizontal },
   ] : []
 
   const linkClass = (active: boolean) => cn(
@@ -68,7 +70,7 @@ export function NavBar({ user }: NavBarProps) {
               <span className="w-9 h-9 rounded-xl bg-ink grid place-items-center shadow-hard-sm shadow-retro-coral">
                 <span className="font-mono font-bold text-retro-lime text-lg leading-none">SF</span>
               </span>
-              <span className="hidden sm:block font-display font-extrabold text-xl text-ink tracking-tight">SecureFiles</span>
+              <span className="hidden sm:block font-display font-extrabold text-xl text-ink tracking-tight">{siteTitle}</span>
             </Link>
 
             <div className="flex items-center gap-1 flex-wrap">

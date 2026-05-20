@@ -2,7 +2,10 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, FolderOpen, ChevronRight, Sparkles } from 'lucide-react'
+import { Lock, FolderOpen, ChevronRight, Sparkles, CalendarClock } from 'lucide-react'
+import { isMembershipExpired, membershipExpiry } from '@/lib/membership'
+import { ExpiredPopup } from '@/components/ExpiredPopup'
+import { formatDate } from '@/lib/utils'
 
 const ACCENT_CYCLE = ['bg-retro-lime', 'bg-retro-sky', 'bg-retro-coral', 'bg-retro-lemon', 'bg-retro-mint', 'bg-retro-grape']
 
@@ -12,20 +15,43 @@ export default async function DownloadPage() {
   const userId = session.user.id
   const isAdmin = session.user.role === 'ADMIN'
 
-  const [rawCategories, accessRecords] = await Promise.all([
+  const [rawCategories, accessRecords, hiddenRecords, me] = await Promise.all([
     prisma.category.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }),
     isAdmin ? [] : prisma.userCategoryAccess.findMany({ where: { userId }, select: { categoryId: true } }),
+    isAdmin ? [] : prisma.userHiddenCategory.findMany({ where: { userId }, select: { categoryId: true } }),
+    isAdmin ? null : prisma.user.findUnique({ where: { id: userId }, select: { membershipStart: true, membershipMonths: true } }),
   ])
 
-  const categories = rawCategories.map((c) => ({
-    ...c,
-    imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/') ? `/api${c.imageUrl}` : c.imageUrl,
-  }))
+  const hiddenSet = new Set(hiddenRecords.map((r: { categoryId: string }) => r.categoryId))
+  const expired = me ? isMembershipExpired(me) : false
+  const expiry = me ? membershipExpiry(me) : null
+
+  const categories = rawCategories
+    .filter((c) => isAdmin || !hiddenSet.has(c.id)) // hide admin-hidden categories
+    .map((c) => ({
+      ...c,
+      imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/') ? `/api${c.imageUrl}` : c.imageUrl,
+    }))
 
   const accessSet = new Set(accessRecords.map((r: { categoryId: string }) => r.categoryId))
 
   return (
     <div>
+      {expired && <ExpiredPopup expiryDate={expiry ? formatDate(expiry.toISOString()) : null} />}
+
+      {expired && (
+        <div className="mb-8 bg-retro-coral border-[1.5px] border-ink rounded-retro p-5 shadow-hard flex items-start gap-3">
+          <CalendarClock className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-display text-xl text-white font-bold">Your membership has expired</p>
+            <p className="text-white/90 text-sm mt-1">
+              {expiry ? `It expired on ${formatDate(expiry.toISOString())}.` : ''} All downloads are locked.
+              Please contact the administrator to renew your membership.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="mb-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-paper border-[1.5px] border-ink mb-4 shadow-hard-sm">
           <span className="w-2 h-2 rounded-full bg-retro-coral" />
@@ -48,7 +74,8 @@ export default async function DownloadPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {categories.map((cat, idx) => {
-            const hasAccess = isAdmin || accessSet.has(cat.id)
+            // Expired members lose access to everything (cards render locked)
+            const hasAccess = !expired && (isAdmin || accessSet.has(cat.id))
             const accent = ACCENT_CYCLE[idx % ACCENT_CYCLE.length]
             return (
               <div

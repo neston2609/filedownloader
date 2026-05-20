@@ -1,13 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, Trash2, Shield, UserCheck, ChevronDown, Plus, Mail, User as UserIcon, Lock, X, AlertCircle } from 'lucide-react'
+import { CheckCircle, XCircle, Trash2, Shield, UserCheck, ChevronDown, Plus, Mail, User as UserIcon, Lock, X, AlertCircle, Eye, EyeOff, CalendarClock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { membershipExpiry, isMembershipExpired, daysUntilExpiry, MEMBERSHIP_PRESETS } from '@/lib/membership'
 
 interface Category { id: string; name: string }
 interface User {
   id: string; email: string; username: string; role: string
   isActive: boolean; paymentStatus: string; notes: string; createdAt: string
+  membershipStart: string | null
+  membershipMonths: number | null
   categoryAccess: { categoryId: string }[]
+  hiddenCategories: { categoryId: string }[]
 }
 
 const EMPTY_NEW = { email: '', username: '', password: '', role: 'MEMBER', isActive: true, paymentStatus: 'pending' }
@@ -56,6 +60,30 @@ export default function UsersPage() {
     }
     const updated = await fetch('/api/users').then(r => r.json())
     setUsers(updated)
+    setSaving(null)
+  }
+
+  async function toggleHidden(userId: string, categoryId: string, isHidden: boolean) {
+    setSaving(`hide-${userId}-${categoryId}`)
+    await fetch(`/api/users/${userId}/hidden`, {
+      method: isHidden ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categoryId }),
+    })
+    const updated = await fetch('/api/users').then(r => r.json())
+    setUsers(updated)
+    setSaving(null)
+  }
+
+  async function setMembership(userId: string, patch: { membershipStart?: string | null; membershipMonths?: number | null }) {
+    setSaving(`mem-${userId}`)
+    const res = await fetch(`/api/users/${userId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setUsers(us => us.map(u => u.id === userId ? { ...u, ...updated } : u))
+    }
     setSaving(null)
   }
 
@@ -219,7 +247,11 @@ export default function UsersPage() {
       <div className="space-y-3">
         {users.map(user => {
           const accessSet = new Set(user.categoryAccess.map(a => a.categoryId))
+          const hiddenSet = new Set(user.hiddenCategories.map(h => h.categoryId))
           const isExpanded = expandedUser === user.id
+          const expiry = membershipExpiry(user)
+          const expired = isMembershipExpired(user)
+          const daysLeft = daysUntilExpiry(user)
 
           return (
             <div key={user.id} className="bg-paper border-[1.5px] border-ink rounded-2xl shadow-hard-sm overflow-hidden">
@@ -247,9 +279,22 @@ export default function UsersPage() {
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                       user.paymentStatus === 'paid' ? 'bg-retro-mint text-ink' : 'bg-bg2 text-mute'
                     }`}>{user.paymentStatus}</span>
+                    {expired ? (
+                      <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-retro-coral text-white flex items-center gap-1">
+                        <CalendarClock className="w-3 h-3" /> Expired
+                      </span>
+                    ) : expiry && daysLeft !== null && daysLeft <= 14 ? (
+                      <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-retro-lemon text-ink flex items-center gap-1">
+                        <CalendarClock className="w-3 h-3" /> {daysLeft}d left
+                      </span>
+                    ) : null}
                   </div>
                   <p className="text-sm text-mute truncate">{user.email}</p>
-                  <p className="text-xs text-mute">Joined {formatDate(user.createdAt)}</p>
+                  <p className="text-xs text-mute">
+                    Joined {formatDate(user.createdAt)}
+                    {expiry && <> · Expires {formatDate(expiry.toISOString())}</>}
+                    {!expiry && user.membershipMonths === null && user.membershipStart === null && <> · No membership window</>}
+                  </p>
                 </div>
 
                 {/* Payment status */}
@@ -285,31 +330,106 @@ export default function UsersPage() {
                 </button>
               </div>
 
-              {/* Expanded: category permissions + notes */}
+              {/* Expanded: membership + category permissions + notes */}
               {isExpanded && (
                 <div className="border-t border-line p-4 bg-bg2/50 space-y-4">
+                  {/* Membership window */}
                   <div>
                     <h3 className="text-sm font-semibold text-ink mb-2 flex items-center gap-1.5">
-                      <Shield className="w-3.5 h-3.5" /> Category Access
+                      <CalendarClock className="w-3.5 h-3.5" /> Membership
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="flex flex-wrap items-end gap-3 bg-paper border-[1.5px] border-ink rounded-lg p-3">
+                      <div>
+                        <label className="block text-[11px] font-mono uppercase tracking-wider text-mute mb-1">Start date</label>
+                        <input
+                          type="date"
+                          value={user.membershipStart ? new Date(user.membershipStart).toISOString().slice(0, 10) : ''}
+                          onChange={e => setMembership(user.id, { membershipStart: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                          className="text-sm border-[1.5px] border-ink rounded-lg px-2 py-1.5 bg-bg2 text-ink"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-mono uppercase tracking-wider text-mute mb-1">Membership length</label>
+                        <select
+                          value={user.membershipMonths === null ? 'null' : MEMBERSHIP_PRESETS.some(p => p.months === user.membershipMonths) ? String(user.membershipMonths) : 'custom'}
+                          onChange={e => {
+                            const v = e.target.value
+                            if (v === 'custom') return // handled by the number input
+                            setMembership(user.id, { membershipMonths: v === 'null' ? null : Number(v) })
+                          }}
+                          className="text-sm border-[1.5px] border-ink rounded-lg px-2 py-1.5 bg-bg2 text-ink"
+                        >
+                          {MEMBERSHIP_PRESETS.map(p => (
+                            <option key={p.label} value={p.months === null ? 'null' : String(p.months)}>{p.label}</option>
+                          ))}
+                          <option value="custom">Custom…</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-mono uppercase tracking-wider text-mute mb-1">Custom (months)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          placeholder="e.g. 9"
+                          defaultValue={user.membershipMonths ?? ''}
+                          onBlur={e => {
+                            const n = e.target.value === '' ? null : Number(e.target.value)
+                            setMembership(user.id, { membershipMonths: n })
+                          }}
+                          className="w-24 text-sm border-[1.5px] border-ink rounded-lg px-2 py-1.5 bg-bg2 text-ink"
+                        />
+                      </div>
+                      <div className="text-xs text-ink2">
+                        {expiry ? (
+                          <span className={expired ? 'text-retro-coral font-semibold' : ''}>
+                            {expired ? 'EXPIRED' : 'Expires'}: {formatDate(expiry.toISOString())}
+                          </span>
+                        ) : (
+                          <span className="text-mute">Unlimited (no expiry)</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-semibold text-ink mb-2 flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5" /> Category Access &amp; Visibility
+                    </h3>
+                    <p className="text-xs text-mute mb-2">
+                      Left button = grant download access. Eye toggle = hide the category from this member entirely.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                       {categories.map(cat => {
                         const has = accessSet.has(cat.id)
+                        const hidden = hiddenSet.has(cat.id)
                         const key = `${user.id}-${cat.id}`
                         return (
-                          <button
-                            key={cat.id}
-                            onClick={() => toggleAccess(user.id, cat.id, has)}
-                            disabled={saving === key}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                              has
-                                ? 'bg-retro-sky/30 border-blue-500 text-ink hover:bg-retro-sky'
-                                : 'bg-paper border-ink text-mute hover:border-slate-400'
-                            }`}
-                          >
-                            {has ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                            <span className="truncate">{cat.name}</span>
-                          </button>
+                          <div key={cat.id} className={`flex items-center gap-1 rounded-lg border-[1.5px] overflow-hidden ${hidden ? 'border-ink/30 opacity-60' : 'border-ink'}`}>
+                            <button
+                              onClick={() => toggleAccess(user.id, cat.id, has)}
+                              disabled={saving === key || hidden}
+                              className={`flex-1 flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all ${
+                                has
+                                  ? 'bg-retro-sky/30 text-ink hover:bg-retro-sky'
+                                  : 'bg-paper text-mute hover:bg-bg2'
+                              }`}
+                            >
+                              {has ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" /> : <XCircle className="w-3.5 h-3.5 flex-shrink-0" />}
+                              <span className="truncate">{cat.name}</span>
+                            </button>
+                            <button
+                              onClick={() => toggleHidden(user.id, cat.id, hidden)}
+                              disabled={saving === `hide-${user.id}-${cat.id}`}
+                              title={hidden ? 'Category is hidden — click to show' : 'Click to hide this category from the member'}
+                              className={`px-2 py-2 border-l-[1.5px] transition-colors ${
+                                hidden
+                                  ? 'bg-retro-coral/20 border-ink/30 text-retro-coral'
+                                  : 'bg-paper border-ink text-mute hover:text-ink'
+                              }`}
+                            >
+                              {hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
                         )
                       })}
                     </div>
