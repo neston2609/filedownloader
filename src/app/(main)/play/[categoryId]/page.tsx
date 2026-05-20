@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Download as DownloadIcon, Film } from 'lucide-react'
 import path from 'path'
 import { isVideo, isNativeBrowserVideo } from '@/lib/media'
+import { checkCategoryAccess } from '@/lib/access'
 
 interface Props {
   params: { categoryId: string }
@@ -19,14 +20,11 @@ export default async function PlayPage({ params, searchParams }: Props) {
   const filePath = searchParams.filePath
   if (!pathId || !filePath) notFound()
 
-  // Access check
+  // Access check — uses the central resolver so group-level (subscription)
+  // access counts, not just per-category grants.
   const isAdmin = session.user.role === 'ADMIN'
-  if (!isAdmin) {
-    const access = await prisma.userCategoryAccess.findUnique({
-      where: { userId_categoryId: { userId: session.user.id, categoryId: params.categoryId } },
-    })
-    if (!access) redirect('/download')
-  }
+  const access = await checkCategoryAccess(session.user.id, params.categoryId, isAdmin)
+  if (!access.allowed) redirect('/download')
 
   const category = await prisma.category.findUnique({
     where: { id: params.categoryId },
