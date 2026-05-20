@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { SlidersHorizontal, Save, Mail, Globe, Loader2, CheckCircle, XCircle, Send, CreditCard, Plus, Trash2, Banknote, QrCode, Phone } from 'lucide-react'
+import { SlidersHorizontal, Save, Mail, Globe, Loader2, CheckCircle, XCircle, Send, CreditCard, Plus, Trash2, Banknote, QrCode, Phone, EyeOff } from 'lucide-react'
+import { HideRulesEditor } from '@/components/HideRulesEditor'
 
 interface Settings {
   siteTitle: string
@@ -208,6 +209,15 @@ export default function SettingsPage() {
             <p className="text-xs text-mute mt-1">ข้อความที่แสดงตอน login ถ้าสมาชิกยังไม่ได้ยืนยันอีเมล</p>
           </div>
         </div>
+      </section>
+
+      {/* Global hide rules */}
+      <section className="bg-paper border-[1.5px] border-ink rounded-retro p-6 mb-6 shadow-hard">
+        <h2 className="font-display text-2xl font-bold text-ink mb-1 flex items-center gap-2">
+          <EyeOff className="w-5 h-5 text-retro-grape" /> Hidden Files & Folders (Global)
+        </h2>
+        <p className="text-sm text-mute mb-4">ซ่อนไฟล์/โฟลเดอร์จากทุก Category เช่น ไฟล์ระบบ ภาพปก หรือไฟล์ขยะ (ตั้งเฉพาะ Category ได้ที่หน้า Categories)</p>
+        <HideRulesEditor />
       </section>
 
       {/* Payment & subscription plans */}

@@ -103,7 +103,21 @@ model Category {
   scpPaths     CategoryScpPath[]
   userAccess   UserCategoryAccess[]
   hiddenForUsers UserHiddenCategory[]
+  hideRules    HideRule[]
   downloadLogs DownloadLog[]
+}
+
+// Rules that hide files/folders from the file browser. categoryId null means
+// the rule is global (applies to every category). pattern supports * and ?
+// wildcards. target restricts to 'file', 'folder', or 'both'.
+model HideRule {
+  id         String   @id @default(cuid())
+  categoryId String?
+  pattern    String
+  target     String   @default("both")
+  createdAt  DateTime @default(now())
+
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 model CategorySmbPath {

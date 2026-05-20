@@ -5,6 +5,7 @@ import { streamSmbFile } from '@/lib/smb'
 import { streamFtpFile } from '@/lib/ftp'
 import { streamScpFile } from '@/lib/scp'
 import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
+import { getHideRules, isHidden } from '@/lib/hide'
 import path from 'path'
 
 export async function GET(req: NextRequest) {
@@ -32,6 +33,15 @@ export async function GET(req: NextRequest) {
   if (!access.allowed) {
     const deny = accessDenyResponse(access.reason!)
     return NextResponse.json(deny.body, { status: deny.status })
+  }
+
+  // Block downloading a hidden file (or one inside a hidden folder)
+  const hideRules = await getHideRules(categoryId)
+  const segments = filePath.replace(/\\/g, '/').split('/').filter(Boolean)
+  const basename = segments[segments.length - 1] ?? ''
+  const dirSegments = segments.slice(0, -1)
+  if (isHidden(basename, false, hideRules) || dirSegments.some((s) => isHidden(s, true, hideRules))) {
+    return NextResponse.json({ error: 'File not found' }, { status: 404 })
   }
 
   // Log

@@ -7,6 +7,7 @@ import { streamScpFile } from '@/lib/scp'
 import { videoMimeType, isNativeBrowserVideo } from '@/lib/media'
 import { transcodeToMp4 } from '@/lib/transcode'
 import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
+import { getHideRules, isHidden } from '@/lib/hide'
 import path from 'path'
 
 export async function GET(req: NextRequest) {
@@ -34,6 +35,14 @@ export async function GET(req: NextRequest) {
   if (!access.allowed) {
     const deny = accessDenyResponse(access.reason!)
     return NextResponse.json(deny.body, { status: deny.status })
+  }
+
+  // Block streaming a hidden file (or one inside a hidden folder)
+  const hideRules = await getHideRules(categoryId)
+  const segments = filePath.replace(/\\/g, '/').split('/').filter(Boolean)
+  if (isHidden(segments[segments.length - 1] ?? '', false, hideRules) ||
+      segments.slice(0, -1).some((s) => isHidden(s, true, hideRules))) {
+    return NextResponse.json({ error: 'File not found' }, { status: 404 })
   }
 
   const filename = path.basename(filePath)

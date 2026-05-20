@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal, FolderSearch, ImagePlus, ImageOff, Loader2, Layers } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal, FolderSearch, ImagePlus, ImageOff, Loader2, Layers, EyeOff } from 'lucide-react'
 import { FolderPicker } from '@/components/FolderPicker'
+import { HideRulesEditor } from '@/components/HideRulesEditor'
 
 interface FileServer { id: string; name: string; host: string }
 interface FtpServerFull extends FileServer { secure: boolean }
@@ -585,6 +586,12 @@ export default function CategoriesPage() {
                         <Plus className="w-3.5 h-3.5" /> Add Server Path
                       </button>
                     )}
+
+                    {/* Per-category hide rules */}
+                    <h3 className="text-sm font-semibold text-ink mt-5 mb-2 flex items-center gap-1.5">
+                      <EyeOff className="w-3.5 h-3.5" /> ซ่อนไฟล์/โฟลเดอร์ (เฉพาะ Category นี้)
+                    </h3>
+                    <HideRulesEditor categoryId={cat.id} />
                   </div>
                 )}
               </div>

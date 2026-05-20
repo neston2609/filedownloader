@@ -5,6 +5,7 @@ import { listSmbDirectory } from '@/lib/smb'
 import { listFtpDirectory } from '@/lib/ftp'
 import { listScpDirectory } from '@/lib/scp'
 import { checkCategoryBrowse, accessDenyResponse } from '@/lib/access'
+import { getHideRules, isHidden } from '@/lib/hide'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -26,6 +27,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(deny.body, { status: deny.status })
   }
 
+  // Hide rules (global + this category) — applied to listings for everyone.
+  const hideRules = await getHideRules(categoryId)
+  const applyHide = <T extends { name: string; isDirectory: boolean }>(items: T[]) =>
+    items.filter((e) => !isHidden(e.name, e.isDirectory, hideRules))
+
   // Try SMB first
   const smbPath = pathId
     ? await prisma.categorySmbPath.findFirst({
@@ -44,7 +50,7 @@ export async function GET(req: NextRequest) {
         smbPath.smbServer.username, smbPath.smbServer.password,
         smbPath.smbServer.domain, smbPath.path, subPath
       )
-      return NextResponse.json({ entries, pathId: smbPath.id, protocol: 'smb' })
+      return NextResponse.json({ entries: applyHide(entries), pathId: smbPath.id, protocol: 'smb' })
     } catch (err) {
       console.error('SMB browse error:', err)
       return NextResponse.json({ error: (err as Error).message ?? 'SMB browse failed' }, { status: 500 })
@@ -69,7 +75,7 @@ export async function GET(req: NextRequest) {
         ftpPath.ftpServer.username, ftpPath.ftpServer.password,
         ftpPath.ftpServer.secure, ftpPath.path, subPath
       )
-      return NextResponse.json({ entries, pathId: ftpPath.id, protocol: 'ftp' })
+      return NextResponse.json({ entries: applyHide(entries), pathId: ftpPath.id, protocol: 'ftp' })
     } catch (err) {
       console.error('FTP browse error:', err)
       return NextResponse.json({ error: (err as Error).message ?? 'FTP browse failed' }, { status: 500 })
@@ -98,7 +104,7 @@ export async function GET(req: NextRequest) {
         scpPath.path, subPath
       )
       return NextResponse.json({
-        entries, pathId: scpPath.id, protocol: 'scp',
+        entries: applyHide(entries), pathId: scpPath.id, protocol: 'scp',
         debug: { basePath: scpPath.path, subPath, host: scpPath.scpServer.host },
       })
     } catch (err) {
