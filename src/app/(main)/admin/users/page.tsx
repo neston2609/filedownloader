@@ -379,6 +379,12 @@ export default function UsersPage() {
                         email: user.email,
                         membershipStart: user.membershipStart,
                         membershipExpiry: expiry ? expiry.toISOString() : null,
+                        packages: user.groupAccess
+                          .filter(ga => ga.granted)
+                          .map(ga => ({
+                            name: groups.find(g => g.id === ga.groupId)?.name ?? 'Group',
+                            expiresAt: ga.expiresAt,
+                          })),
                       }} />
                     </div>
                     <div className="flex flex-wrap items-end gap-3 bg-paper border-[1.5px] border-ink rounded-lg p-3">

@@ -3,12 +3,14 @@ import { useState } from 'react'
 import { Printer, X, RefreshCw, Loader2, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
+interface CardPackage { name: string; expiresAt: string | null }
 interface CardUser {
   id: string
   username: string
   email: string
   membershipStart: string | null
   membershipExpiry: string | null
+  packages: CardPackage[]
 }
 
 function genPassword(): string {
@@ -31,10 +33,19 @@ function buildCardHtml(opts: {
   email: string
   membershipStart: string | null
   membershipExpiry: string | null
+  packages: CardPackage[]
   footerNote: string
 }): string {
-  const start = opts.membershipStart ? formatDate(opts.membershipStart) : '-'
-  const expiry = opts.membershipExpiry ? formatDate(opts.membershipExpiry) : 'ไม่จำกัด'
+  const now = Date.now()
+  // Per-package expiry rows; fall back to the global membership window when
+  // the member has no package subscriptions.
+  const pkgRows = opts.packages.length > 0
+    ? opts.packages.map((p) => {
+        const exp = p.expiresAt ? formatDate(p.expiresAt) : 'ไม่จำกัด'
+        const isExp = p.expiresAt ? new Date(p.expiresAt).getTime() < now : false
+        return `<div class="row"><span class="k">${escapeHtml(p.name)}</span><span class="v" style="font-size:9pt${isExp ? ';color:#ff6b4a' : ''}">${isExp ? 'หมดอายุ ' : ''}${exp}</span></div>`
+      }).join('')
+    : `<div class="row"><span class="k">หมดอายุ</span><span class="v" style="font-size:9pt">${opts.membershipExpiry ? formatDate(opts.membershipExpiry) : 'ไม่จำกัด'}</span></div>`
   return `<!doctype html>
 <html lang="th">
 <head>
@@ -81,8 +92,11 @@ function buildCardHtml(opts: {
       <div class="row"><span class="k">Username</span><span class="v">${escapeHtml(opts.username)}</span></div>
       <div class="row"><span class="k">Password</span><span class="v">${escapeHtml(opts.password)}</span></div>
       ${opts.email ? `<div class="row"><span class="k">Email</span><span class="v" style="font-size:9pt">${escapeHtml(opts.email)}</span></div>` : ''}
-      <div class="row"><span class="k">เริ่มสมาชิก</span><span class="v" style="font-size:9pt">${start}</span></div>
-      <div class="row"><span class="k">หมดอายุ</span><span class="v" style="font-size:9pt">${expiry}</span></div>
+    </div>
+
+    <h2>แพ็กเกจ & วันหมดอายุ</h2>
+    <div class="creds">
+      ${pkgRows}
     </div>
 
     <h2>วิธีเข้าสู่ระบบ</h2>
@@ -163,6 +177,7 @@ export function MembershipCardButton({ user }: { user: CardUser }) {
         email: user.email,
         membershipStart: user.membershipStart,
         membershipExpiry: user.membershipExpiry,
+        packages: user.packages,
         footerNote,
       })
 
