@@ -43,3 +43,6 @@ next-env.d.ts
 # secrets / scratch
 gmail.txt
 *.secret
+
+# deploy script (contains server connection details)
+deploy.ps1
