@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { ImagePlus, Trash2, Loader2, ExternalLink, Eye, EyeOff } from 'lucide-react'
+import { ImagePlus, Trash2, Loader2, ExternalLink, Eye, EyeOff, Save, Check } from 'lucide-react'
 
 interface Banner {
   id: string
@@ -16,10 +16,26 @@ export function BannersEditor() {
   const [uploading, setUploading] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // Controlled edit values + "saved" flash, keyed by banner id
+  const [edits, setEdits] = useState<Record<string, string>>({})
+  const [savedId, setSavedId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/banners').then(r => r.json()).then(d => setBanners(Array.isArray(d) ? d : [])).finally(() => setLoading(false))
+    fetch('/api/banners').then(r => r.json()).then(d => {
+      const arr: Banner[] = Array.isArray(d) ? d : []
+      setBanners(arr)
+      setEdits(Object.fromEntries(arr.map(b => [b.id, b.linkUrl])))
+    }).finally(() => setLoading(false))
   }, [])
+
+  async function saveLink(id: string) {
+    const value = (edits[id] ?? '').trim()
+    const banner = banners.find(b => b.id === id)
+    if (!banner || value === banner.linkUrl) return
+    await patch(id, { linkUrl: value })
+    setSavedId(id)
+    setTimeout(() => setSavedId(s => (s === id ? null : s)), 2000)
+  }
 
   async function upload(file: File) {
     setUploading(true)
@@ -32,6 +48,7 @@ export function BannersEditor() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Upload failed')
       setBanners(b => [...b, data])
+      setEdits(e => ({ ...e, [data.id]: data.linkUrl }))
       setLinkUrl('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -65,11 +82,20 @@ export function BannersEditor() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={b.imageUrl} alt="" className="h-12 w-auto max-w-[120px] object-contain rounded border border-line bg-paper flex-shrink-0" />
             <input
-              defaultValue={b.linkUrl}
-              onBlur={e => e.target.value !== b.linkUrl && patch(b.id, { linkUrl: e.target.value })}
+              value={edits[b.id] ?? ''}
+              onChange={e => setEdits(ed => ({ ...ed, [b.id]: e.target.value }))}
+              onKeyDown={e => { if (e.key === 'Enter') saveLink(b.id) }}
+              onBlur={() => saveLink(b.id)}
               placeholder="https://link-when-clicked.com"
               className="flex-1 min-w-0 bg-paper border-[1.5px] border-ink rounded px-2 py-1 text-sm text-ink placeholder-mute font-mono"
             />
+            <button
+              onClick={() => saveLink(b.id)}
+              title="บันทึกลิงก์"
+              className="px-2 py-1.5 rounded text-ink hover:bg-paper"
+            >
+              {savedId === b.id ? <Check className="w-4 h-4 text-green-600" /> : <Save className="w-4 h-4" />}
+            </button>
             {b.linkUrl && (
               <a href={b.linkUrl} target="_blank" rel="noopener noreferrer" className="text-mute hover:text-ink" title="เปิดลิงก์">
                 <ExternalLink className="w-4 h-4" />
