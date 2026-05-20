@@ -63,9 +63,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     affiliateUrl = settings?.globalLink ?? null
   }
 
+  const imageUrl = category.imageUrl && category.imageUrl.startsWith('/uploads/')
+    ? `/api${category.imageUrl}`
+    : category.imageUrl
+
   return (
     <FileBrowser
-      category={{ id: category.id, name: category.name, description: category.description }}
+      category={{ id: category.id, name: category.name, description: category.description, imageUrl: imageUrl ?? null }}
       paths={paths}
       initialPathId={searchParams.pathId ?? paths[0]?.id ?? null}
       initialSubPath={searchParams.path ?? ''}

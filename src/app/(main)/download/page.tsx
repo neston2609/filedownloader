@@ -113,8 +113,10 @@ export default async function DownloadPage() {
 
                 <div className="p-5 flex-1 flex flex-col bg-paper">
                   <h3 className="font-display text-2xl font-bold text-ink leading-tight mb-1.5">{cat.name}</h3>
-                  {cat.description && (
-                    <p className="text-sm text-ink2 line-clamp-2 mb-4 flex-1">{cat.description}</p>
+                  {cat.description ? (
+                    <p className="text-[15px] leading-relaxed text-ink2 line-clamp-3 mb-4 flex-1">{cat.description}</p>
+                  ) : (
+                    <p className="text-[15px] leading-relaxed text-mute/60 italic mb-4 flex-1">No description yet.</p>
                   )}
 
                   {hasAccess ? (

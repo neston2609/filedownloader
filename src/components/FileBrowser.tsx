@@ -20,7 +20,7 @@ interface BrowserPath {
 }
 
 interface FileBrowserProps {
-  category: { id: string; name: string; description: string }
+  category: { id: string; name: string; description: string; imageUrl: string | null }
   paths: BrowserPath[]
   initialPathId: string | null
   initialSubPath: string
@@ -132,13 +132,28 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/download" className="text-mute hover:text-ink2 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{category.name}</h1>
-          {category.description && <p className="text-mute text-sm">{category.description}</p>}
+      <Link href="/download" className="inline-flex items-center gap-1.5 text-mute hover:text-ink transition-colors mb-4 text-sm font-medium">
+        <ArrowLeft className="w-4 h-4" />
+        Back to library
+      </Link>
+
+      {/* Category banner: picture + title + larger description */}
+      <div className="bg-paper border-[1.5px] border-ink rounded-retro overflow-hidden shadow-hard mb-6">
+        <div className="flex flex-col sm:flex-row">
+          {category.imageUrl && (
+            <div className="sm:w-64 flex-shrink-0 bg-bg2 relative aspect-video sm:aspect-auto border-b-[1.5px] sm:border-b-0 sm:border-r-[1.5px] border-ink">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <div className="p-6 flex flex-col justify-center">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-ink tracking-tight leading-tight">
+              {category.name}
+            </h1>
+            {category.description && (
+              <p className="text-ink2 text-lg leading-relaxed mt-3">{category.description}</p>
+            )}
+          </div>
         </div>
       </div>
 
