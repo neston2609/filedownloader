@@ -10,7 +10,7 @@ async function requireAdmin() {
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, months, priceThb, active, sortOrder } = await req.json()
+  const { name, months, priceThb, active, sortOrder, groupId } = await req.json()
 
   let monthsNum: number | undefined
   if (months !== undefined) {
@@ -31,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(priceNum !== undefined && { priceThb: priceNum }),
       ...(active !== undefined && { active: !!active }),
       ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) || 0 }),
+      ...(groupId !== undefined && { groupId: groupId || null }),
     },
   })
   return NextResponse.json(plan)

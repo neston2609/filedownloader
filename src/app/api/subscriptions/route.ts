@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       planName: plan.name,
       months: plan.months,
       priceThb: plan.priceThb,
+      groupId: plan.groupId,
       status: 'wait_payment',
       previousExpiry,
       newExpiry,

@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, months, priceThb, active, sortOrder } = await req.json()
+  const { name, months, priceThb, active, sortOrder, groupId } = await req.json()
   if (!name || months === undefined || priceThb === undefined) {
     return NextResponse.json({ error: 'name, months, priceThb required' }, { status: 400 })
   }
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       name, months: monthsNum, priceThb: priceNum,
       active: active === undefined ? true : !!active,
       sortOrder: sortOrder ? Number(sortOrder) : 0,
+      groupId: groupId || null,
     },
   })
   return NextResponse.json(plan, { status: 201 })

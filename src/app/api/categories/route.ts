@@ -32,11 +32,11 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (session?.user?.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, description, affiliateLinkOverride, sortOrder } = await req.json()
+  const { name, description, affiliateLinkOverride, sortOrder, groupId } = await req.json()
   if (!name) return NextResponse.json({ error: 'Name required' }, { status: 400 })
 
   const category = await prisma.category.create({
-    data: { name, description: description ?? '', affiliateLinkOverride: affiliateLinkOverride || null, sortOrder: sortOrder ?? 0 },
+    data: { name, description: description ?? '', affiliateLinkOverride: affiliateLinkOverride || null, sortOrder: sortOrder ?? 0, groupId: groupId || null },
     include: {
       smbPaths: { include: { smbServer: { select: { id: true, name: true, host: true } } } },
       ftpPaths: { include: { ftpServer: { select: { id: true, name: true, host: true, secure: true } } } },

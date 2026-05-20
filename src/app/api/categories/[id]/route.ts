@@ -10,7 +10,7 @@ async function requireAdmin() {
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, description, affiliateLinkOverride, sortOrder } = await req.json()
+  const { name, description, affiliateLinkOverride, sortOrder, groupId } = await req.json()
 
   const category = await prisma.category.update({
     where: { id: params.id },
@@ -19,6 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(description !== undefined && { description }),
       ...(affiliateLinkOverride !== undefined && { affiliateLinkOverride: affiliateLinkOverride || null }),
       ...(sortOrder !== undefined && { sortOrder }),
+      ...(groupId !== undefined && { groupId: groupId || null }),
     },
     include: {
       smbPaths: { include: { smbServer: { select: { id: true, name: true, host: true } } } },

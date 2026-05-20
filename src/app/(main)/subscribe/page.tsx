@@ -14,7 +14,11 @@ export default async function SubscribePage() {
       where: { id: session.user.id },
       select: { membershipStart: true, membershipMonths: true },
     }),
-    prisma.membershipPlan.findMany({ where: { active: true }, orderBy: [{ sortOrder: 'asc' }, { months: 'asc' }] }),
+    prisma.membershipPlan.findMany({
+      where: { active: true },
+      orderBy: [{ sortOrder: 'asc' }, { months: 'asc' }],
+      include: { group: { select: { name: true } } },
+    }),
     getSiteSettings(),
     prisma.subscriptionRequest.findMany({
       where: { userId: session.user.id },
@@ -31,7 +35,7 @@ export default async function SubscribePage() {
 
   return (
     <SubscribeClient
-      plans={plans.map(p => ({ id: p.id, name: p.name, months: p.months, priceThb: p.priceThb }))}
+      plans={plans.map(p => ({ id: p.id, name: p.name, months: p.months, priceThb: p.priceThb, groupName: p.group?.name ?? null }))}
       currentExpiry={expiry ? expiry.toISOString() : null}
       expired={expired}
       bankAccount={settings.bankAccount}

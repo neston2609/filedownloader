@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal, FolderSearch, ImagePlus, ImageOff, Loader2 } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, Pencil, X, Link2, Server, HardDrive, Lock, AlertTriangle, Terminal, FolderSearch, ImagePlus, ImageOff, Loader2, Layers } from 'lucide-react'
 import { FolderPicker } from '@/components/FolderPicker'
 
 interface FileServer { id: string; name: string; host: string }
@@ -9,13 +9,14 @@ interface ScpServer { id: string; name: string; host: string; hasPrivateKey: boo
 interface SmbPath { id: string; path: string; smbServer: FileServer }
 interface FtpPath { id: string; path: string; ftpServer: FtpServerFull }
 interface ScpPath { id: string; path: string; scpServer: FileServer }
+interface CategoryGroup { id: string; name: string; sortOrder: number; _count?: { categories: number } }
 interface Category {
   id: string; name: string; description: string; affiliateLinkOverride: string | null
-  sortOrder: number; imageUrl: string | null
+  sortOrder: number; imageUrl: string | null; groupId: string | null
   smbPaths: SmbPath[]; ftpPaths: FtpPath[]; scpPaths: ScpPath[]
 }
 
-const EMPTY_CAT = { name: '', description: '', affiliateLinkOverride: '', sortOrder: 0 }
+const EMPTY_CAT = { name: '', description: '', affiliateLinkOverride: '', sortOrder: 0, groupId: '' }
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -34,6 +35,8 @@ export default function CategoriesPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [uploadingImage, setUploadingImage] = useState<string | null>(null)
   const [imageError, setImageError] = useState<{ catId: string; msg: string } | null>(null)
+  const [groups, setGroups] = useState<CategoryGroup[]>([])
+  const [newGroupName, setNewGroupName] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -41,13 +44,44 @@ export default function CategoriesPage() {
       fetch('/api/smb').then(r => r.json()),
       fetch('/api/ftp').then(r => r.json()),
       fetch('/api/scp').then(r => r.json()),
-    ]).then(([cats, smb, ftp, scp]) => {
+      fetch('/api/category-groups').then(r => r.json()),
+    ]).then(([cats, smb, ftp, scp, grp]) => {
       setCategories(cats)
       setSmbServers(smb)
       setFtpServers(ftp)
       setScpServers(scp)
+      setGroups(Array.isArray(grp) ? grp : [])
     }).finally(() => setLoading(false))
   }, [])
+
+  async function addGroup() {
+    if (!newGroupName.trim()) return
+    const res = await fetch('/api/category-groups', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newGroupName.trim() }),
+    })
+    if (res.ok) { const created = await res.json(); setGroups(g => [...g, created]); setNewGroupName('') }
+  }
+
+  async function renameGroup(id: string, name: string) {
+    const res = await fetch(`/api/category-groups/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+    })
+    if (res.ok) { const updated = await res.json(); setGroups(g => g.map(x => x.id === id ? updated : x)) }
+  }
+
+  async function deleteGroup(id: string) {
+    if (!confirm('ลบกลุ่มนี้? Category ในกลุ่มจะกลายเป็นไม่มีกลุ่ม')) return
+    await fetch(`/api/category-groups/${id}`, { method: 'DELETE' })
+    setGroups(g => g.filter(x => x.id !== id))
+    setCategories(cs => cs.map(c => c.groupId === id ? { ...c, groupId: null } : c))
+  }
+
+  async function setCategoryGroup(catId: string, groupId: string) {
+    const res = await fetch(`/api/categories/${catId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId: groupId || null }),
+    })
+    if (res.ok) setCategories(cs => cs.map(c => c.id === catId ? { ...c, groupId: groupId || null } : c))
+  }
 
   function update(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -174,7 +208,7 @@ export default function CategoriesPage() {
 
   function startEdit(cat: Category) {
     setEditId(cat.id)
-    setForm({ name: cat.name, description: cat.description, affiliateLinkOverride: cat.affiliateLinkOverride ?? '', sortOrder: cat.sortOrder })
+    setForm({ name: cat.name, description: cat.description, affiliateLinkOverride: cat.affiliateLinkOverride ?? '', sortOrder: cat.sortOrder, groupId: cat.groupId ?? '' })
     setShowForm(true)
   }
 
@@ -216,6 +250,40 @@ export default function CategoriesPage() {
         </button>
       </div>
 
+      {/* Category Groups management */}
+      <div className="bg-paper border-[1.5px] border-ink rounded-retro p-5 mb-6 shadow-hard-sm">
+        <h2 className="font-display text-xl font-bold text-ink mb-1 flex items-center gap-2">
+          <Layers className="w-5 h-5 text-retro-grape" /> Category Groups
+        </h2>
+        <p className="text-sm text-mute mb-3">จัดกลุ่ม Category — ใช้ผูกกับแพ็กเกจสมาชิก เมื่อสมาชิกจ่ายเงินแล้วจะได้สิทธิ์ทุก Category ในกลุ่มอัตโนมัติ</p>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {groups.length === 0 && <span className="text-sm text-mute">ยังไม่มีกลุ่ม</span>}
+          {groups.map(g => (
+            <div key={g.id} className="flex items-center gap-1.5 bg-bg2 border-[1.5px] border-ink rounded-full pl-3 pr-1.5 py-1">
+              <input
+                defaultValue={g.name}
+                onBlur={e => e.target.value.trim() && e.target.value !== g.name && renameGroup(g.id, e.target.value.trim())}
+                className="bg-transparent text-sm text-ink font-medium w-28 focus:outline-none"
+              />
+              <span className="text-[10px] text-mute font-mono">{g._count?.categories ?? 0}</span>
+              <button onClick={() => deleteGroup(g.id)} className="text-mute hover:text-retro-coral p-0.5"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            value={newGroupName}
+            onChange={e => setNewGroupName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') addGroup() }}
+            placeholder="ชื่อกลุ่มใหม่ (เช่น Premium, หนัง, เพลง)"
+            className="flex-1 max-w-xs border-[1.5px] border-ink rounded-lg px-3 py-1.5 text-sm bg-bg2 text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400"
+          />
+          <button onClick={addGroup} className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-3 py-1.5 rounded-full text-xs">
+            <Plus className="w-3.5 h-3.5" /> เพิ่มกลุ่ม
+          </button>
+        </div>
+      </div>
+
       {showForm && (
         <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-5 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -230,6 +298,17 @@ export default function CategoriesPage() {
             <div>
               <label className="block text-xs font-medium text-ink2 mb-1">Sort Order</label>
               <input type="number" value={form.sortOrder} onChange={update('sortOrder')} className="w-full border border-ink rounded-lg px-3 py-2 text-sm bg-bg2 text-ink placeholder-mute focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-ink2 mb-1 flex items-center gap-1"><Layers className="w-3 h-3" /> Category Group</label>
+              <select
+                value={form.groupId}
+                onChange={e => setForm(f => ({ ...f, groupId: e.target.value }))}
+                className="w-full border border-ink rounded-lg px-3 py-2 text-sm bg-bg2 text-ink focus:outline-none focus:ring-1 focus:ring-blue-400"
+              >
+                <option value="">— ไม่มีกลุ่ม —</option>
+                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-ink2 mb-1">Description</label>
@@ -296,6 +375,17 @@ export default function CategoriesPage() {
                         <span className="text-xs text-ink flex items-center gap-1"><Link2 className="w-3 h-3" />Custom affiliate</span>
                       )}
                     </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-retro-grape" />
+                    <select
+                      value={cat.groupId ?? ''}
+                      onChange={e => setCategoryGroup(cat.id, e.target.value)}
+                      className="text-xs border-[1.5px] border-ink rounded-lg px-2 py-1 bg-bg2 text-ink max-w-[140px]"
+                    >
+                      <option value="">— No group —</option>
+                      {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
                   </div>
                   <button onClick={() => setExpandedCat(expandedCat === cat.id ? null : cat.id)} className="text-sm text-mute hover:text-ink border border-ink px-2 py-1 rounded-lg transition-colors">
                     Paths

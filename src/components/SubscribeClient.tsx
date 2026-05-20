@@ -4,7 +4,7 @@ import { CreditCard, CalendarClock, Check, Loader2, Upload, Banknote, QrCode, Al
 import { formatDate } from '@/lib/utils'
 import { addMonths } from '@/lib/membership'
 
-interface Plan { id: string; name: string; months: number; priceThb: number }
+interface Plan { id: string; name: string; months: number; priceThb: number; groupName?: string | null }
 interface Req {
   id: string; planName: string; months: number; priceThb: number; status: string
   slipUrl: string | null; previousExpiry: string | null; newExpiry: string | null; createdAt: string
@@ -120,6 +120,11 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
                   {isSel && <Check className="w-5 h-5 text-retro-coral" />}
                 </div>
                 <p className="text-mute text-sm">{plan.months} month{plan.months > 1 ? 's' : ''} access</p>
+                {plan.groupName && (
+                  <p className="text-xs text-ink mt-1.5 inline-flex items-center gap-1 bg-retro-grape/30 border border-ink rounded-full px-2 py-0.5">
+                    ปลดล็อกกลุ่ม: {plan.groupName}
+                  </p>
+                )}
                 <p className="font-display text-3xl font-extrabold text-ink mt-3">฿{plan.priceThb.toLocaleString()}</p>
               </button>
             )

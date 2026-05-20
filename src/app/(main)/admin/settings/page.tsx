@@ -29,7 +29,10 @@ interface Plan {
   priceThb: number
   active: boolean
   sortOrder: number
+  groupId: string | null
 }
+
+interface CategoryGroup { id: string; name: string }
 
 export default function SettingsPage() {
   const [s, setS] = useState<Settings | null>(null)
@@ -43,16 +46,19 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
 
   const [plans, setPlans] = useState<Plan[]>([])
-  const [newPlan, setNewPlan] = useState({ name: '', months: 1, priceThb: 0 })
+  const [newPlan, setNewPlan] = useState({ name: '', months: 1, priceThb: 0, groupId: '' })
   const [qrUploading, setQrUploading] = useState(false)
+  const [catGroups, setCatGroups] = useState<CategoryGroup[]>([])
 
   useEffect(() => {
     Promise.all([
       fetch('/api/settings').then(r => r.json()),
       fetch('/api/plans').then(r => r.json()),
-    ]).then(([data, planData]) => {
+      fetch('/api/category-groups').then(r => r.json()),
+    ]).then(([data, planData, groupData]) => {
       setS({ ...data, smtpPassword: '' })
       setPlans(Array.isArray(planData) ? planData : [])
+      setCatGroups(Array.isArray(groupData) ? groupData : [])
     }).finally(() => setLoading(false))
   }, [])
 
@@ -64,7 +70,7 @@ export default function SettingsPage() {
     if (res.ok) {
       const created = await res.json()
       setPlans(p => [...p, created])
-      setNewPlan({ name: '', months: 1, priceThb: 0 })
+      setNewPlan({ name: '', months: 1, priceThb: 0, groupId: '' })
     }
   }
 
@@ -273,6 +279,15 @@ export default function SettingsPage() {
                   onBlur={e => Number(e.target.value) !== plan.priceThb && updatePlan(plan.id, { priceThb: Number(e.target.value) })}
                 />
               </div>
+              <select
+                value={plan.groupId ?? ''}
+                onChange={e => updatePlan(plan.id, { groupId: e.target.value || null })}
+                title="Category group unlocked by this plan"
+                className="text-xs bg-paper border-[1.5px] border-ink rounded px-2 py-1 text-ink max-w-[150px]"
+              >
+                <option value="">— No group —</option>
+                {catGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
               <button
                 onClick={() => updatePlan(plan.id, { active: !plan.active })}
                 className={`text-xs px-2 py-1 rounded-full font-medium border-[1.5px] border-ink ${plan.active ? 'bg-retro-mint text-ink' : 'bg-bg text-mute'}`}
@@ -302,6 +317,15 @@ export default function SettingsPage() {
             <input type="number" min={0} className="w-24 bg-paper border-[1.5px] border-ink rounded px-2 py-1 text-sm text-ink"
               value={newPlan.priceThb} onChange={e => setNewPlan(p => ({ ...p, priceThb: Number(e.target.value) || 0 }))} />
           </div>
+          <select
+            value={newPlan.groupId}
+            onChange={e => setNewPlan(p => ({ ...p, groupId: e.target.value }))}
+            title="Category group unlocked by this plan"
+            className="text-sm bg-paper border-[1.5px] border-ink rounded px-2 py-1 text-ink max-w-[150px]"
+          >
+            <option value="">— No group —</option>
+            {catGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
           <button onClick={addPlan} className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-3 py-1.5 rounded-full text-xs">
             <Plus className="w-3.5 h-3.5" /> Add Plan
           </button>

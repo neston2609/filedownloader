@@ -60,7 +60,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const ext = applyExtension(user, request.months)
     const finalExpiry = membershipExpiry(ext)
 
-    const [updated] = await prisma.$transaction([
+    // If the plan was tied to a category group, find all categories in that
+    // group so we can grant access to each one.
+    const groupCategories = request.groupId
+      ? await prisma.category.findMany({ where: { groupId: request.groupId }, select: { id: true } })
+      : []
+
+    await prisma.$transaction([
       prisma.subscriptionRequest.update({
         where: { id: params.id },
         data: { status: 'paid', paidAt: new Date(), newExpiry: finalExpiry },
@@ -75,7 +81,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           paymentStatus: 'paid',
         },
       }),
+      // Grant access to every category in the plan's group. createMany +
+      // skipDuplicates is idempotent against the @@unique(userId, categoryId).
+      ...(groupCategories.length > 0
+        ? [prisma.userCategoryAccess.createMany({
+            data: groupCategories.map((c) => ({
+              userId: request.userId,
+              categoryId: c.id,
+              grantedBy: 'subscription',
+            })),
+            skipDuplicates: true,
+          })]
+        : []),
     ])
+
+    const updated = await prisma.subscriptionRequest.findUnique({ where: { id: params.id } })
     return NextResponse.json(updated)
   }
 

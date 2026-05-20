@@ -77,6 +77,16 @@ model ScpServer {
   categoryPaths CategoryScpPath[]
 }
 
+model CategoryGroup {
+  id        String   @id @default(cuid())
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  categories Category[]
+  plans      MembershipPlan[]
+}
+
 model Category {
   id                   String  @id @default(cuid())
   name                 String
@@ -84,7 +94,9 @@ model Category {
   affiliateLinkOverride String?
   sortOrder            Int     @default(0)
   imageUrl             String?
+  groupId              String?
 
+  group        CategoryGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   smbPaths     CategorySmbPath[]
   ftpPaths     CategoryFtpPath[]
   scpPaths     CategoryScpPath[]
@@ -197,7 +209,9 @@ model MembershipPlan {
   active    Boolean @default(true)
   sortOrder Int     @default(0)
   createdAt DateTime @default(now())
+  groupId   String?
 
+  group    CategoryGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   requests SubscriptionRequest[]
 }
 
@@ -212,6 +226,7 @@ model SubscriptionRequest {
   priceThb       Int
   status         String   @default("wait_payment")
   slipUrl        String?
+  groupId        String?
   previousExpiry DateTime?
   newExpiry      DateTime?
   createdAt      DateTime @default(now())
