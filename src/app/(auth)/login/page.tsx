@@ -10,9 +10,30 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [needsConfirm, setNeedsConfirm] = useState(false)
+  const [resendMsg, setResendMsg] = useState('')
+  const [resending, setResending] = useState(false)
   const [branding, setBranding] = useState({ siteTitle: 'SecureFiles', heroHeading: '', heroSubheading: '' })
   const router = useRouter()
   const params = useSearchParams()
+
+  async function resendConfirmation() {
+    setResending(true)
+    setResendMsg('')
+    try {
+      const res = await fetch('/api/auth/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: email }),
+      })
+      const data = await res.json()
+      setResendMsg(data.message ?? 'A new confirmation link has been sent.')
+    } catch {
+      setResendMsg('Could not resend right now. Please try again later.')
+    } finally {
+      setResending(false)
+    }
+  }
 
   useEffect(() => {
     fetch('/api/public-settings').then(r => r.json()).then(setBranding).catch(() => {})
@@ -21,6 +42,8 @@ function LoginForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setResendMsg('')
+    setNeedsConfirm(false)
     setLoading(true)
 
     // Pre-check account state so we can show a helpful message instead of
@@ -33,6 +56,7 @@ function LoginForm() {
       }).then(r => r.json())
       if (pre?.status === 'unverified' || pre?.status === 'pending') {
         setError(pre.message ?? 'Please confirm your email before signing in.')
+        setNeedsConfirm(pre.status === 'unverified')
         setLoading(false)
         return
       }
@@ -91,9 +115,28 @@ function LoginForm() {
       )}
 
       {error && (
-        <div className="flex gap-2 items-center bg-retro-coral border-[1.5px] border-ink rounded-2xl p-3 mb-4 text-white text-sm shadow-hard-sm">
+        <div className="bg-retro-coral border-[1.5px] border-ink rounded-2xl p-3 mb-4 text-white text-sm shadow-hard-sm">
+          <div className="flex gap-2 items-center">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {error}
+          </div>
+          {needsConfirm && (
+            <button
+              type="button"
+              onClick={resendConfirmation}
+              disabled={resending}
+              className="mt-2 inline-flex items-center gap-1.5 bg-white text-ink border-[1.5px] border-ink rounded-full px-3 py-1 text-xs font-semibold hover:bg-bg2 transition-colors disabled:opacity-60"
+            >
+              {resending ? 'Sending…' : 'Resend confirmation email'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {resendMsg && (
+        <div className="flex gap-2 items-center bg-retro-mint/50 border-[1.5px] border-ink rounded-2xl p-3 mb-4 text-ink text-sm shadow-hard-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          {error}
+          {resendMsg}
         </div>
       )}
 
