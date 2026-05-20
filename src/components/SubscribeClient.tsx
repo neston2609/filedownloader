@@ -159,9 +159,12 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
             )}
             {paymentQrUrl && (
               <div className="bg-bg2/50 border-[1.5px] border-ink rounded-lg p-4 flex flex-col items-center">
-                <p className="text-sm font-semibold text-ink flex items-center gap-1.5 mb-2 self-start"><QrCode className="w-4 h-4" /> Scan to pay</p>
+                <p className="text-sm font-semibold text-ink flex items-center gap-1.5 mb-3 self-start"><QrCode className="w-4 h-4" /> Scan to pay</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={paymentQrUrl} alt="Payment QR" className="w-40 h-40 object-contain border-[1.5px] border-ink rounded-lg bg-white" />
+                <img src={paymentQrUrl} alt="Payment QR" className="w-full max-w-[340px] aspect-square object-contain border-[1.5px] border-ink rounded-lg bg-white p-2" />
+                <a href={paymentQrUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-mute hover:text-ink underline mt-2">
+                  Open full size
+                </a>
               </div>
             )}
           </div>

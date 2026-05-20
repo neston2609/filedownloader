@@ -207,12 +207,12 @@ export default function SettingsPage() {
           <div>
             <label className={labelCls}><QrCode className="w-3 h-3 inline mr-1" />Payment QR Code</label>
             <div className="flex items-start gap-3">
-              <div className="w-28 h-28 rounded-lg border-[1.5px] border-ink bg-bg2 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-44 h-44 rounded-lg border-[1.5px] border-ink bg-bg2 flex items-center justify-center overflow-hidden flex-shrink-0 p-1.5">
                 {s.paymentQrUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={s.paymentQrUrl} alt="Payment QR" className="w-full h-full object-contain" />
                 ) : (
-                  <QrCode className="w-8 h-8 text-mute" />
+                  <QrCode className="w-10 h-10 text-mute" />
                 )}
               </div>
               <div className="flex flex-col gap-2">
