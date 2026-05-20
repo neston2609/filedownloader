@@ -38,6 +38,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     where: { id: params.id },
     data: {
       ...(isActive !== undefined && { isActive }),
+      // Admin activating an account also confirms the email — covers the case
+      // where SMTP is down or the member never clicked the link.
+      ...(isActive === true && { emailVerified: true, verifyToken: null }),
       ...(paymentStatus !== undefined && { paymentStatus }),
       ...(notes !== undefined && { notes }),
       ...(role !== undefined && { role }),

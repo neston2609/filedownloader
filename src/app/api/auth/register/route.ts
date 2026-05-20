@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { sendMail, welcomeEmailHtml } from '@/lib/mailer'
+import crypto from 'crypto'
+import { sendMail, verifyEmailHtml } from '@/lib/mailer'
 import { getSiteSettings } from '@/lib/settings'
 
 export async function POST(req: NextRequest) {
@@ -23,25 +24,35 @@ export async function POST(req: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(password, 12)
+    const verifyToken = crypto.randomBytes(32).toString('hex')
+
     await prisma.user.create({
-      data: { email, username, password: hashed, isActive: false },
+      data: {
+        email, username, password: hashed,
+        isActive: false, emailVerified: false, verifyToken,
+      },
     })
 
-    // Send welcome email (best-effort — registration succeeds even if it fails)
-    try {
-      const settings = await getSiteSettings()
-      if (settings.smtpEnabled) {
-        await sendMail(
-          email,
-          `Welcome to ${settings.siteTitle}`,
-          welcomeEmailHtml({ username, siteTitle: settings.siteTitle })
-        )
-      }
-    } catch (mailErr) {
-      console.error('Welcome email failed (registration still succeeded):', mailErr)
+    const settings = await getSiteSettings()
+    const origin = req.nextUrl.origin
+    const verifyUrl = `${origin}/api/auth/verify?token=${verifyToken}`
+
+    let emailSent = false
+    if (settings.smtpEnabled) {
+      const result = await sendMail(
+        email,
+        `Confirm your email — ${settings.siteTitle}`,
+        verifyEmailHtml({ username, siteTitle: settings.siteTitle, verifyUrl })
+      ).catch(() => ({ ok: false, message: '' }))
+      emailSent = result.ok
     }
 
-    return NextResponse.json({ message: 'Registration submitted. Await admin approval.' }, { status: 201 })
+    return NextResponse.json({
+      message: emailSent
+        ? 'Registration successful! Please check your email to confirm your account.'
+        : 'Registration successful! Email confirmation is currently unavailable — please contact the administrator to activate your account.',
+      emailSent,
+    }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Registration failed' }, { status: 500 })
   }

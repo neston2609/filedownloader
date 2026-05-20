@@ -24,6 +24,11 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Email confirmation. Default true so existing users and admin-created
+  // accounts aren't locked out; self-registration sets it false explicitly.
+  emailVerified Boolean @default(true)
+  verifyToken   String? @unique
+
   // Membership window. membershipMonths = null means unlimited / no expiry.
   membershipStart  DateTime?
   membershipMonths Int?

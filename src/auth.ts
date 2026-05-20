@@ -26,6 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!user) return null
+        if (!user.emailVerified) throw new Error('Please confirm your email first. Check your inbox for the confirmation link.')
         if (!user.isActive) throw new Error('Account pending admin approval')
 
         const valid = await bcrypt.compare(credentials.password as string, user.password)

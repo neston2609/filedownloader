@@ -62,6 +62,19 @@ function LoginForm() {
         </div>
       )}
 
+      {params.get('verify') === 'success' && (
+        <div className="flex gap-2 items-center bg-retro-mint/50 border-[1.5px] border-ink rounded-2xl p-3 mb-4 text-ink text-sm shadow-hard-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          Email confirmed! You can now sign in.
+        </div>
+      )}
+      {params.get('verify') === 'invalid' && (
+        <div className="flex gap-2 items-center bg-retro-coral border-[1.5px] border-ink rounded-2xl p-3 mb-4 text-white text-sm shadow-hard-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          This confirmation link is invalid or has already been used.
+        </div>
+      )}
+
       {error && (
         <div className="flex gap-2 items-center bg-retro-coral border-[1.5px] border-ink rounded-2xl p-3 mb-4 text-white text-sm shadow-hard-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />

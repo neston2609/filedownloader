@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, Mail, User, UserPlus, AlertCircle, CheckCircle } from 'lucide-react'
 
@@ -8,8 +7,8 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ email: '', username: '', password: '', confirm: '' })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   function update(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -41,8 +40,8 @@ export default function RegisterPage() {
     if (!res.ok) {
       setError(data.error ?? 'Registration failed')
     } else {
+      setSuccessMsg(data.message ?? 'Registration successful! Please check your email to confirm your account.')
       setSuccess(true)
-      setTimeout(() => router.push('/login'), 3000)
     }
   }
 
@@ -52,8 +51,11 @@ export default function RegisterPage() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-retro-mint border-[1.5px] border-ink mb-4 shadow-hard-sm">
           <CheckCircle className="w-7 h-7 text-ink" />
         </div>
-        <h2 className="font-display text-2xl text-ink mb-2">Request submitted!</h2>
-        <p className="text-ink2 text-sm">Your account is pending admin approval. Redirecting to login shortly…</p>
+        <h2 className="font-display text-2xl text-ink mb-2">Check your email!</h2>
+        <p className="text-ink2 text-sm">{successMsg}</p>
+        <Link href="/login" className="btn-retro inline-flex items-center justify-center gap-2 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-5 py-2.5 rounded-full text-sm mt-5">
+          Go to Sign in
+        </Link>
       </div>
     )
   }
@@ -67,7 +69,7 @@ export default function RegisterPage() {
         <h1 className="font-display text-3xl text-ink leading-tight">
           Get <span className="swatch bg-retro-sky">access</span>
         </h1>
-        <p className="text-ink2 text-sm mt-2">Submit your registration for admin approval</p>
+        <p className="text-ink2 text-sm mt-2">Create your account — we&apos;ll email you a confirmation link</p>
       </div>
 
       {error && (
