@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendMail, verifyEmailHtml } from '@/lib/mailer'
 import { getSiteSettings } from '@/lib/settings'
+import { getBaseUrl } from '@/lib/url'
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,8 +35,7 @@ export async function POST(req: NextRequest) {
     })
 
     const settings = await getSiteSettings()
-    const origin = req.nextUrl.origin
-    const verifyUrl = `${origin}/api/auth/verify?token=${verifyToken}`
+    const verifyUrl = `${getBaseUrl(req)}/api/auth/verify?token=${verifyToken}`
 
     let emailSent = false
     if (settings.smtpEnabled) {

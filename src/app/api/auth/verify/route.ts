@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getBaseUrl } from '@/lib/url'
 
 // GET /api/auth/verify?token=xxx — confirm email, activate login, redirect.
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token')
-  const origin = req.nextUrl.origin
+  const origin = getBaseUrl(req)
 
   if (!token) {
     return NextResponse.redirect(`${origin}/login?verify=invalid`)
