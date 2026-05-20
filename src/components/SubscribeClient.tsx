@@ -1,10 +1,16 @@
 'use client'
 import { useState } from 'react'
-import { CreditCard, CalendarClock, Check, Loader2, Upload, Banknote, QrCode, AlertCircle, ArrowRight, Clock, CheckCircle, XCircle, FileText } from 'lucide-react'
+import { CreditCard, CalendarClock, Check, Loader2, Upload, Banknote, QrCode, AlertCircle, ArrowRight, Clock, CheckCircle, XCircle, FileText, Layers } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { addMonths } from '@/lib/membership'
 
-interface Plan { id: string; name: string; months: number; priceThb: number; groupName?: string | null }
+interface Plan {
+  id: string; name: string; months: number; priceThb: number
+  groupId?: string | null
+  groupName?: string | null
+  groupDescription?: string | null
+  groupSortOrder?: number
+}
 interface Req {
   id: string; planName: string; months: number; priceThb: number; status: string
   slipUrl: string | null; previousExpiry: string | null; newExpiry: string | null; createdAt: string
@@ -39,6 +45,26 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
     const base = !currentExpiry || expired ? new Date() : new Date(currentExpiry)
     return addMonths(base, plan.months)
   }
+
+  // Group plans by their category group; ungrouped plans go into a trailing
+  // section. Groups are ordered by their sortOrder.
+  const groupedPlans = (() => {
+    const map = new Map<string, { key: string; name: string | null; description: string | null; sortOrder: number; plans: Plan[] }>()
+    for (const p of plans) {
+      const key = p.groupId ?? '__none__'
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          name: p.groupId ? (p.groupName ?? 'กลุ่ม') : null,
+          description: p.groupId ? (p.groupDescription ?? '') : null,
+          sortOrder: p.groupId ? (p.groupSortOrder ?? 9999) : 100000,
+          plans: [],
+        })
+      }
+      map.get(key)!.plans.push(p)
+    }
+    return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder)
+  })()
 
   async function confirmSubscription() {
     if (!selected) return
@@ -106,29 +132,45 @@ export function SubscribeClient({ plans, currentExpiry, expired, bankAccount, pa
           {contactEmail && <p className="text-sm text-mute mt-1">Contact <a className="underline" href={`mailto:${contactEmail}`}>{contactEmail}</a> for help.</p>}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-          {plans.map(plan => {
-            const isSel = selected?.id === plan.id
-            return (
-              <button
-                key={plan.id}
-                onClick={() => setSelected(plan)}
-                className={`text-left bg-paper border-[1.5px] rounded-retro p-5 transition-all ${isSel ? 'border-ink shadow-hard ring-2 ring-retro-coral' : 'border-ink shadow-hard-sm hover:shadow-hard'}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-display text-2xl font-bold text-ink">{plan.name}</h3>
-                  {isSel && <Check className="w-5 h-5 text-retro-coral" />}
-                </div>
-                <p className="text-mute text-sm">{plan.months} month{plan.months > 1 ? 's' : ''} access</p>
-                {plan.groupName && (
-                  <p className="text-xs text-ink mt-1.5 inline-flex items-center gap-1 bg-retro-grape/30 border border-ink rounded-full px-2 py-0.5">
-                    ปลดล็อกกลุ่ม: {plan.groupName}
-                  </p>
+        <div className="space-y-8 mb-10">
+          {groupedPlans.map(section => (
+            <div key={section.key}>
+              {/* Group header */}
+              <div className="mb-3">
+                <h2 className="font-display text-2xl font-bold text-ink flex items-center gap-2">
+                  {section.name !== null && <Layers className="w-5 h-5 text-retro-grape" />}
+                  {section.name ?? 'แพ็กเกจทั่วไป'}
+                </h2>
+                {section.description && (
+                  <p className="text-ink2 text-sm mt-1 max-w-2xl">{section.description}</p>
                 )}
-                <p className="font-display text-3xl font-extrabold text-ink mt-3">฿{plan.priceThb.toLocaleString()}</p>
-              </button>
-            )
-          })}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {section.plans.map(plan => {
+                  const isSel = selected?.id === plan.id
+                  return (
+                    <button
+                      key={plan.id}
+                      onClick={() => setSelected(plan)}
+                      className={`text-left bg-paper border-[1.5px] rounded-retro p-5 transition-all ${isSel ? 'border-ink shadow-hard ring-2 ring-retro-coral' : 'border-ink shadow-hard-sm hover:shadow-hard'}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-display text-2xl font-bold text-ink">{plan.name}</h3>
+                        {isSel && <Check className="w-5 h-5 text-retro-coral" />}
+                      </div>
+                      <p className="text-mute text-sm">{plan.months} month{plan.months > 1 ? 's' : ''} access</p>
+                      {plan.groupName && (
+                        <p className="text-xs text-ink mt-1.5 inline-flex items-center gap-1 bg-retro-grape/30 border border-ink rounded-full px-2 py-0.5">
+                          ปลดล็อกกลุ่ม: {plan.groupName}
+                        </p>
+                      )}
+                      <p className="font-display text-3xl font-extrabold text-ink mt-3">฿{plan.priceThb.toLocaleString()}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

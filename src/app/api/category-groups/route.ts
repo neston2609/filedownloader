@@ -21,11 +21,11 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, sortOrder } = await req.json()
+  const { name, description, sortOrder } = await req.json()
   if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
 
   const group = await prisma.categoryGroup.create({
-    data: { name, sortOrder: sortOrder ? Number(sortOrder) : 0 },
+    data: { name, description: description ?? '', sortOrder: sortOrder ? Number(sortOrder) : 0 },
     include: { _count: { select: { categories: true } } },
   })
   return NextResponse.json(group, { status: 201 })

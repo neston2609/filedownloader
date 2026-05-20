@@ -9,7 +9,7 @@ interface ScpServer { id: string; name: string; host: string; hasPrivateKey: boo
 interface SmbPath { id: string; path: string; smbServer: FileServer }
 interface FtpPath { id: string; path: string; ftpServer: FtpServerFull }
 interface ScpPath { id: string; path: string; scpServer: FileServer }
-interface CategoryGroup { id: string; name: string; sortOrder: number; _count?: { categories: number } }
+interface CategoryGroup { id: string; name: string; description: string; sortOrder: number; _count?: { categories: number } }
 interface Category {
   id: string; name: string; description: string; affiliateLinkOverride: string | null
   sortOrder: number; imageUrl: string | null; groupId: string | null
@@ -62,9 +62,9 @@ export default function CategoriesPage() {
     if (res.ok) { const created = await res.json(); setGroups(g => [...g, created]); setNewGroupName('') }
   }
 
-  async function renameGroup(id: string, name: string) {
+  async function updateGroup(id: string, patch: { name?: string; description?: string }) {
     const res = await fetch(`/api/category-groups/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch),
     })
     if (res.ok) { const updated = await res.json(); setGroups(g => g.map(x => x.id === id ? updated : x)) }
   }
@@ -256,17 +256,26 @@ export default function CategoriesPage() {
           <Layers className="w-5 h-5 text-retro-grape" /> Category Groups
         </h2>
         <p className="text-sm text-mute mb-3">จัดกลุ่ม Category — ใช้ผูกกับแพ็กเกจสมาชิก เมื่อสมาชิกจ่ายเงินแล้วจะได้สิทธิ์ทุก Category ในกลุ่มอัตโนมัติ</p>
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="space-y-2 mb-3">
           {groups.length === 0 && <span className="text-sm text-mute">ยังไม่มีกลุ่ม</span>}
           {groups.map(g => (
-            <div key={g.id} className="flex items-center gap-1.5 bg-bg2 border-[1.5px] border-ink rounded-full pl-3 pr-1.5 py-1">
-              <input
-                defaultValue={g.name}
-                onBlur={e => e.target.value.trim() && e.target.value !== g.name && renameGroup(g.id, e.target.value.trim())}
-                className="bg-transparent text-sm text-ink font-medium w-28 focus:outline-none"
+            <div key={g.id} className="bg-bg2 border-[1.5px] border-ink rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <input
+                  defaultValue={g.name}
+                  onBlur={e => e.target.value.trim() && e.target.value !== g.name && updateGroup(g.id, { name: e.target.value.trim() })}
+                  className="bg-paper border-[1.5px] border-ink rounded px-2 py-1 text-sm text-ink font-semibold flex-1 min-w-0 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+                <span className="text-[10px] text-mute font-mono whitespace-nowrap">{g._count?.categories ?? 0} cat</span>
+                <button onClick={() => deleteGroup(g.id)} className="text-mute hover:text-retro-coral p-0.5"><Trash2 className="w-4 h-4" /></button>
+              </div>
+              <textarea
+                defaultValue={g.description}
+                onBlur={e => e.target.value !== g.description && updateGroup(g.id, { description: e.target.value })}
+                rows={2}
+                placeholder="คำอธิบายกลุ่ม (แสดงในหน้า Subscription)"
+                className="w-full bg-paper border-[1.5px] border-ink rounded px-2 py-1.5 text-xs text-ink placeholder-mute resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
-              <span className="text-[10px] text-mute font-mono">{g._count?.categories ?? 0}</span>
-              <button onClick={() => deleteGroup(g.id)} className="text-mute hover:text-retro-coral p-0.5"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           ))}
         </div>

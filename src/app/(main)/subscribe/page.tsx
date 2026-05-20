@@ -17,7 +17,7 @@ export default async function SubscribePage() {
     prisma.membershipPlan.findMany({
       where: { active: true },
       orderBy: [{ sortOrder: 'asc' }, { months: 'asc' }],
-      include: { group: { select: { name: true } } },
+      include: { group: { select: { id: true, name: true, description: true, sortOrder: true } } },
     }),
     getSiteSettings(),
     prisma.subscriptionRequest.findMany({
@@ -35,7 +35,13 @@ export default async function SubscribePage() {
 
   return (
     <SubscribeClient
-      plans={plans.map(p => ({ id: p.id, name: p.name, months: p.months, priceThb: p.priceThb, groupName: p.group?.name ?? null }))}
+      plans={plans.map(p => ({
+        id: p.id, name: p.name, months: p.months, priceThb: p.priceThb,
+        groupId: p.group?.id ?? null,
+        groupName: p.group?.name ?? null,
+        groupDescription: p.group?.description ?? null,
+        groupSortOrder: p.group?.sortOrder ?? 9999,
+      }))}
       currentExpiry={expiry ? expiry.toISOString() : null}
       expired={expired}
       bankAccount={settings.bankAccount}

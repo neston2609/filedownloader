@@ -78,10 +78,11 @@ model ScpServer {
 }
 
 model CategoryGroup {
-  id        String   @id @default(cuid())
-  name      String
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
 
   categories Category[]
   plans      MembershipPlan[]

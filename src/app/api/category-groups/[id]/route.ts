@@ -10,11 +10,12 @@ async function requireAdmin() {
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, sortOrder } = await req.json()
+  const { name, description, sortOrder } = await req.json()
   const group = await prisma.categoryGroup.update({
     where: { id: params.id },
     data: {
       ...(name !== undefined && { name }),
+      ...(description !== undefined && { description }),
       ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) || 0 }),
     },
     include: { _count: { select: { categories: true } } },
