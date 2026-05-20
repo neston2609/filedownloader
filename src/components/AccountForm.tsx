@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { User, Mail, Shield, CreditCard, Calendar, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Save } from 'lucide-react'
+import { User, Mail, Shield, CreditCard, Calendar, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Save, Pencil, X, Loader2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 interface AccountFormProps {
@@ -19,6 +19,37 @@ interface AccountFormProps {
 
 export function AccountForm({ user }: AccountFormProps) {
   const isExpired = user.membershipExpiry ? new Date(user.membershipExpiry).getTime() < Date.now() : false
+
+  // Email editing
+  const [email, setEmail] = useState(user.email)
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [emailSaving, setEmailSaving] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailSaved, setEmailSaved] = useState(false)
+
+  async function saveEmail() {
+    setEmailError(null)
+    setEmailSaved(false)
+    setEmailSaving(true)
+    try {
+      const res = await fetch('/api/users/me/email', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to update email')
+      setEmail(data.email)
+      setEditingEmail(false)
+      setEmailSaved(true)
+      setTimeout(() => setEmailSaved(false), 3000)
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setEmailSaving(false)
+    }
+  }
+
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -83,9 +114,50 @@ export function AccountForm({ user }: AccountFormProps) {
             <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><User className="w-3 h-3" />Username</dt>
             <dd className="text-ink font-medium mt-0.5">{user.username}</dd>
           </div>
-          <div>
+          <div className="sm:col-span-2">
             <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Mail className="w-3 h-3" />Email</dt>
-            <dd className="text-ink font-medium mt-0.5">{user.email}</dd>
+            {editingEmail ? (
+              <dd className="mt-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="flex-1 min-w-[200px] bg-bg2 border-[1.5px] border-ink rounded-lg px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-retro-sky"
+                  />
+                  <button
+                    onClick={saveEmail}
+                    disabled={emailSaving}
+                    className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-3 py-1.5 rounded-full text-xs"
+                  >
+                    {emailSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    Save
+                  </button>
+                  <button
+                    onClick={() => { setEditingEmail(false); setEmail(user.email); setEmailError(null) }}
+                    className="inline-flex items-center gap-1 text-xs text-mute hover:text-ink border-[1.5px] border-ink px-3 py-1.5 rounded-full"
+                  >
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </button>
+                </div>
+                {emailError && (
+                  <p className="text-xs text-retro-coral mt-1.5 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5" /> {emailError}
+                  </p>
+                )}
+              </dd>
+            ) : (
+              <dd className="mt-0.5 flex items-center gap-2">
+                <span className="text-ink font-medium">{email}</span>
+                <button
+                  onClick={() => { setEditingEmail(true); setEmailError(null) }}
+                  className="inline-flex items-center gap-1 text-xs text-mute hover:text-ink2 transition-colors"
+                >
+                  <Pencil className="w-3 h-3" /> Edit
+                </button>
+                {emailSaved && <span className="text-xs text-green-600 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>}
+              </dd>
+            )}
           </div>
           <div>
             <dt className="text-xs text-mute uppercase tracking-wider flex items-center gap-1.5"><Shield className="w-3 h-3" />Role</dt>
