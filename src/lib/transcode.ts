@@ -38,6 +38,11 @@ export function transcodeToMp4(source: NodeJS.ReadableStream): {
     '-hide_banner', '-loglevel', 'error',
     '-i', 'pipe:0',
 
+    // Cap output height at 720p (downscale only — never upscale). -2 keeps
+    // the width even (required by libx264 yuv420p). A lighter 720p encode
+    // lets ffmpeg keep up with playback so the stream doesn't stutter.
+    '-vf', "scale=-2:'min(720,ih)'",
+
     '-c:v', 'libx264',
     '-preset', 'veryfast',
     '-crf', '23',
