@@ -3,12 +3,12 @@ import { prisma } from '@/lib/prisma'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { headers } from 'next/headers'
-import { ArrowLeft, Download as DownloadIcon, Film, Lock, UserPlus } from 'lucide-react'
+import { ArrowLeft, Download as DownloadIcon, Film, Lock, UserPlus, CreditCard } from 'lucide-react'
 import path from 'path'
 import { isVideo, isNativeBrowserVideo } from '@/lib/media'
 import { checkCategoryAccess } from '@/lib/access'
 import { getPublicSiteSettings } from '@/lib/settings'
-import { getGuestPlayCount, todayUtc } from '@/lib/guest'
+import { getGuestPlayCount, todayUtc, memberPlayKey } from '@/lib/guest'
 
 interface Props {
   params: { categoryId: string }
@@ -25,14 +25,23 @@ export default async function PlayPage({ params, searchParams }: Props) {
 
   const settings = await getPublicSiteSettings()
 
+  // isLimitedPlay: true for guests AND logged-in members without subscription
+  let isLimitedPlay = isGuest
+  let canDownload = false
+
   if (isGuest) {
-    // Guest: check feature flag
     if (!settings.guestEnabled) redirect('/login')
   } else {
-    // Authenticated: standard access check
     const isAdmin = session!.user.role === 'ADMIN'
     const access = await checkCategoryAccess(session!.user.id, params.categoryId, isAdmin)
-    if (!access.allowed) redirect('/download')
+    canDownload = access.allowed
+
+    if (!access.allowed) {
+      // Inactive or hidden: block entirely
+      if (access.reason === 'inactive' || access.reason === 'hidden') redirect('/download')
+      // no-access / expired: limited preview play
+      isLimitedPlay = true
+    }
   }
 
   const category = await prisma.category.findUnique({
@@ -45,17 +54,21 @@ export default async function PlayPage({ params, searchParams }: Props) {
   const looksLikeVideo = isVideo(filename)
   const willTranscode = looksLikeVideo && !isNativeBrowserVideo(filename)
 
-  // Guest quota — read current count to show remaining plays in the UI
-  let guestUsed = 0
-  if (isGuest) {
-    const headersList = headers()
-    const ip =
-      headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      headersList.get('x-real-ip') ||
-      '0.0.0.0'
-    // NOTE: count shown here is BEFORE this play is incremented (increment
-    // happens in /api/stream when the video actually loads).
-    guestUsed = await getGuestPlayCount(ip, todayUtc())
+  // Quota — read current count before this play is counted
+  // (increment happens server-side in /api/stream when the video actually loads)
+  let playUsed = 0
+  if (isLimitedPlay) {
+    const date = todayUtc()
+    if (isGuest) {
+      const headersList = headers()
+      const ip =
+        headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        headersList.get('x-real-ip') ||
+        '0.0.0.0'
+      playUsed = await getGuestPlayCount(ip, date)
+    } else {
+      playUsed = await getGuestPlayCount(memberPlayKey(session!.user.id), date)
+    }
   }
 
   const streamUrl = `/api/stream?categoryId=${encodeURIComponent(params.categoryId)}&pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
@@ -80,17 +93,8 @@ export default async function PlayPage({ params, searchParams }: Props) {
             <span className="text-sm font-semibold text-ink truncate">{filename}</span>
           </div>
 
-          {/* Download button — hidden for guests */}
-          {isGuest ? (
-            <Link
-              href="/register"
-              title="สมัครสมาชิกเพื่อ Download"
-              className="btn-retro inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-[1.5px] border-ink bg-bg2 text-ink"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span className="hidden sm:block">Register to Download</span>
-            </Link>
-          ) : (
+          {/* Download button — locked for limited/guest users */}
+          {canDownload ? (
             <a
               href={downloadUrl}
               className="btn-retro inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-[1.5px] border-ink bg-ink text-retro-lime"
@@ -98,27 +102,51 @@ export default async function PlayPage({ params, searchParams }: Props) {
               <DownloadIcon className="w-4 h-4" />
               Download
             </a>
+          ) : isGuest ? (
+            <Link
+              href="/register"
+              className="btn-retro inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-[1.5px] border-ink bg-bg2 text-ink"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span className="hidden sm:block">Register to Download</span>
+            </Link>
+          ) : (
+            <Link
+              href="/subscribe"
+              className="btn-retro inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-[1.5px] border-ink bg-retro-lemon text-ink"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:block">Subscribe to Download</span>
+            </Link>
           )}
         </div>
       </div>
 
-      {/* Guest quota bar */}
-      {isGuest && (
+      {/* Quota bar — shown for guests and unsubscribed members */}
+      {isLimitedPlay && (
         <div className="bg-retro-sky/20 border-b-[1.5px] border-ink px-4 sm:px-6 lg:px-8 py-2">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-3 justify-between text-sm">
             <span className="text-ink2">
-              Guest — ใช้ไปแล้ว{' '}
-              <span className="font-bold text-ink">{guestUsed}/{settings.guestDailyLimit}</span>{' '}
+              {isGuest ? 'Guest' : 'ทดลองดู'} — ใช้ไปแล้ว{' '}
+              <span className="font-bold text-ink">{playUsed}/{settings.guestDailyLimit}</span>{' '}
               คลิปวันนี้
-              {guestUsed >= settings.guestDailyLimit && (
+              {playUsed >= settings.guestDailyLimit && (
                 <span className="ml-2 text-retro-coral font-semibold">⚠ ครบโควต้าแล้ว</span>
               )}
             </span>
             <div className="flex gap-2">
-              <Link href="/login" className="btn-retro inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-[1.5px] border-ink bg-bg2 text-ink">Login</Link>
-              <Link href="/register" className="btn-retro inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-[1.5px] border-ink bg-ink text-retro-lime">
-                <UserPlus className="w-3 h-3" /> Register
-              </Link>
+              {isGuest ? (
+                <>
+                  <Link href="/login" className="btn-retro inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-[1.5px] border-ink bg-bg2 text-ink">Login</Link>
+                  <Link href="/register" className="btn-retro inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-[1.5px] border-ink bg-ink text-retro-lime">
+                    <UserPlus className="w-3 h-3" /> Register
+                  </Link>
+                </>
+              ) : (
+                <Link href="/subscribe" className="btn-retro inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border-[1.5px] border-ink bg-ink text-retro-lime">
+                  <CreditCard className="w-3 h-3" /> ซื้อ Subscription
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -127,23 +155,31 @@ export default async function PlayPage({ params, searchParams }: Props) {
       {/* Video stage */}
       <div className="bg-ink min-h-[calc(100vh-72px-58px)] flex items-center justify-center p-2 sm:p-6">
         {looksLikeVideo ? (
-          guestUsed >= settings.guestDailyLimit && isGuest ? (
+          playUsed >= settings.guestDailyLimit && isLimitedPlay ? (
             /* Quota exceeded — show upgrade prompt instead of video */
             <div className="bg-paper border-[1.5px] border-ink rounded-retro p-8 max-w-md text-center shadow-hard-lg">
               <Lock className="w-12 h-12 text-retro-coral mx-auto mb-4" />
               <p className="font-display text-2xl text-ink mb-2">ครบโควต้า {settings.guestDailyLimit} คลิปแล้ว</p>
               <p className="text-ink2 text-sm mb-6">
-                Guest สามารถดูได้สูงสุด {settings.guestDailyLimit} คลิปต่อวัน<br />
-                สมัครสมาชิกเพื่อดูได้ไม่จำกัด
+                {isGuest ? 'Guest' : 'สมาชิกที่ยังไม่ได้ซื้อ subscription'} สามารถดูได้สูงสุด {settings.guestDailyLimit} คลิปต่อวัน
               </p>
               <div className="flex flex-col gap-2">
-                <Link href="/register" className="btn-retro inline-flex items-center justify-center gap-2 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-6 py-3 rounded-full text-sm">
-                  <UserPlus className="w-4 h-4" />
-                  สมัครสมาชิก
-                </Link>
-                <Link href="/login" className="btn-retro inline-flex items-center justify-center gap-2 bg-bg2 text-ink border-[1.5px] border-ink font-semibold px-6 py-3 rounded-full text-sm">
-                  มีบัญชีแล้ว? Login
-                </Link>
+                {isGuest ? (
+                  <>
+                    <Link href="/register" className="btn-retro inline-flex items-center justify-center gap-2 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-6 py-3 rounded-full text-sm">
+                      <UserPlus className="w-4 h-4" />
+                      สมัครสมาชิก
+                    </Link>
+                    <Link href="/login" className="btn-retro inline-flex items-center justify-center gap-2 bg-bg2 text-ink border-[1.5px] border-ink font-semibold px-6 py-3 rounded-full text-sm">
+                      มีบัญชีแล้ว? Login
+                    </Link>
+                  </>
+                ) : (
+                  <Link href="/subscribe" className="btn-retro inline-flex items-center justify-center gap-2 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-6 py-3 rounded-full text-sm">
+                    <CreditCard className="w-4 h-4" />
+                    ดูแพ็กเกจ Subscription
+                  </Link>
+                )}
               </div>
             </div>
           ) : (

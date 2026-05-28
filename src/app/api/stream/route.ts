@@ -9,7 +9,7 @@ import { transcodeToMp4 } from '@/lib/transcode'
 import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
 import { getHideRules, isHidden } from '@/lib/hide'
 import { getSiteSettings } from '@/lib/settings'
-import { getClientIp, todayUtc, getGuestPlayCount, incrementGuestPlay } from '@/lib/guest'
+import { getClientIp, todayUtc, getGuestPlayCount, incrementGuestPlay, memberPlayKey } from '@/lib/guest'
 import path from 'path'
 
 export async function GET(req: NextRequest) {
@@ -49,13 +49,29 @@ export async function GET(req: NextRequest) {
     // Increment before streaming so fast repeated requests can't bypass the check
     await incrementGuestPlay(ip, date)
   } else {
-    // Authenticated: standard access check (active + not expired + not hidden + granted)
     const isAdmin = session!.user.role === 'ADMIN'
     const access = await checkCategoryAccess(session!.user.id, categoryId, isAdmin)
+
     if (!access.allowed) {
-      const deny = accessDenyResponse(access.reason!)
-      return NextResponse.json(deny.body, { status: deny.status })
+      // Inactive accounts or hidden categories are fully blocked.
+      if (access.reason === 'inactive' || access.reason === 'hidden') {
+        const deny = accessDenyResponse(access.reason)
+        return NextResponse.json(deny.body, { status: deny.status })
+      }
+      // no-access / expired → limited preview: same daily quota as guest, keyed by userId.
+      const settings = await getSiteSettings()
+      const key = memberPlayKey(session!.user.id)
+      const date = todayUtc()
+      const used = await getGuestPlayCount(key, date)
+      if (used >= settings.guestDailyLimit) {
+        return NextResponse.json(
+          { error: 'Daily preview limit reached', used, limit: settings.guestDailyLimit },
+          { status: 429 }
+        )
+      }
+      await incrementGuestPlay(key, date)
     }
+    // If access.allowed === true: no quota — fall through to stream normally.
   }
 
   // Block streaming a hidden file (or one inside a hidden folder)

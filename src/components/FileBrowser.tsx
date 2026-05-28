@@ -47,6 +47,7 @@ interface FileBrowserProps {
   initialSubPath: string
   affiliateUrl: string | null
   canDownload?: boolean
+  canPlay?: boolean
   isGuest?: boolean
   guestDailyLimit?: number
   memberOnlyNotice?: string
@@ -59,6 +60,7 @@ export function FileBrowser({
   initialSubPath,
   affiliateUrl,
   canDownload = true,
+  canPlay: canPlayProp,
   isGuest = false,
   guestDailyLimit = 5,
   memberOnlyNotice = '',
@@ -71,8 +73,10 @@ export function FileBrowser({
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
   const [showNotice, setShowNotice] = useState(false)
 
-  // canPlay: guests can play (quota enforced server-side), members need canDownload
-  const canPlay = isGuest || canDownload
+  // canPlay: explicitly passed, or fall back to old logic
+  const canPlay = canPlayProp !== undefined ? canPlayProp : (isGuest || canDownload)
+  // isLimitedMember: logged-in but no subscription — can play with quota, can't download
+  const isLimitedMember = !isGuest && canPlay && !canDownload
 
   const activePath = paths.find((p) => p.id === pathId) ?? null
 
@@ -217,15 +221,25 @@ export function FileBrowser({
         </div>
       )}
 
-      {/* Member access notice (non-guest, no access) */}
-      {!isGuest && !canDownload && (
+      {/* Limited member notice (logged in, no subscription) */}
+      {isLimitedMember && (
+        <div className="bg-retro-lemon/40 border-[1.5px] border-ink rounded-retro p-4 mb-6 shadow-hard-sm flex flex-wrap items-center gap-3 justify-between">
+          <div>
+            <p className="font-semibold text-ink text-sm">ทดลองดูได้ {guestDailyLimit} คลิป/วัน</p>
+            <p className="text-xs text-ink2 mt-0.5">ซื้อ Subscription เพื่อ Download และดูได้ไม่จำกัด</p>
+          </div>
+          <Link href="/subscribe" className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-3 py-1.5 rounded-full text-xs whitespace-nowrap">
+            ดูแพ็กเกจสมาชิก
+          </Link>
+        </div>
+      )}
+
+      {/* Fully locked (inactive account) */}
+      {!isGuest && !canPlay && !canDownload && (
         <div className="bg-retro-lemon/40 border-[1.5px] border-ink rounded-retro p-4 mb-6 shadow-hard-sm flex items-start gap-3">
           <Lock className="w-5 h-5 text-ink flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="font-semibold text-ink text-sm">{memberOnlyNotice}</p>
-            <Link href="/subscribe" className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-3 py-1.5 rounded-full text-xs mt-2">
-              ดูแพ็กเกจสมาชิก
-            </Link>
           </div>
         </div>
       )}

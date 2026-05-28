@@ -41,11 +41,15 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     if (!browse.allowed) redirect('/download')
   }
 
-  // canDownload: guests can never download; authenticated users depend on access check
+  // canDownload: full access (subscribed member / admin)
+  // canPlay: subscribed members + unsubscribed active members (limited quota) + guests
+  //   Only truly blocked for inactive accounts.
   let canDownload = false
+  let canPlay = isGuest  // guests handled separately via isGuest prop
   if (!isGuest && userId) {
     const access = await checkCategoryAccess(userId, params.categoryId, isAdmin)
     canDownload = access.allowed
+    canPlay = access.allowed || (access.reason !== 'inactive' && access.reason !== 'hidden')
   }
 
   const settings = await getPublicSiteSettings()
@@ -90,6 +94,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       initialSubPath={searchParams.path ?? ''}
       affiliateUrl={affiliateUrl || null}
       canDownload={canDownload}
+      canPlay={canPlay}
       isGuest={isGuest}
       guestDailyLimit={settings.guestDailyLimit}
       memberOnlyNotice={settings.memberOnlyNotice}

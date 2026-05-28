@@ -22,6 +22,14 @@ export async function getGuestPlayCount(ip: string, date: string): Promise<numbe
 }
 
 /**
+ * Key used in GuestPlayLog for logged-in members without subscription.
+ * Prefixed so it never collides with an IP address.
+ */
+export function memberPlayKey(userId: string): string {
+  return `user:${userId}`
+}
+
+/**
  * Atomically increment the guest play count for this IP + date.
  * Returns the NEW count after incrementing.
  */
