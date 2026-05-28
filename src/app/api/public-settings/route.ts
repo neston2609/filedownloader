@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getPublicSiteSettings } from '@/lib/settings'
 
+// Force dynamic so settings changes (e.g. guestEnabled) are read from DB
+// on every request instead of being frozen at build time.
+export const dynamic = 'force-dynamic'
+
 // Public, unauthenticated — only branding strings, no secrets.
 export async function GET() {
   try {
