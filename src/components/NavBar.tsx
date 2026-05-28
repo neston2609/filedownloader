@@ -3,17 +3,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
-import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard } from 'lucide-react'
+import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard, LogIn, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavBarProps {
-  user: { name: string; role: string }
+  user: { name: string; role: string } | null
   siteTitle?: string
 }
 
 export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
   const pathname = usePathname()
-  const isAdmin = user.role === 'ADMIN'
+  const isAdmin = user?.role === 'ADMIN'
   const [settingsOpen, setSettingsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -69,9 +69,11 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
 
   const navItems = [
     { href: '/download', label: 'Downloads', icon: Download },
-    ...(isAdmin
-      ? [{ href: '/admin', label: 'Dashboard', icon: Settings }]
-      : [{ href: '/subscribe', label: 'Subscribe', icon: CreditCard }]),
+    ...(user
+      ? isAdmin
+        ? [{ href: '/admin', label: 'Dashboard', icon: Settings }]
+        : [{ href: '/subscribe', label: 'Subscribe', icon: CreditCard }]
+      : []),
   ]
 
   const linkClass = (active: boolean) => cn(
@@ -155,27 +157,51 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
             </div>
           </div>
 
-          {/* Account + sign-out */}
+          {/* Right side — account info or guest login/register */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <Link
-              href="/account"
-              className={cn(
-                'hidden sm:flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full border-[1.5px] transition-all',
-                pathname === '/account'
-                  ? 'bg-ink text-retro-lime border-ink'
-                  : 'border-transparent text-ink2 hover:border-ink hover:bg-paper hover:text-ink'
-              )}
-            >
-              {user.name}
-              {isAdmin && <span className="text-[10px] font-mono font-bold bg-retro-coral text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Admin</span>}
-            </Link>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="flex items-center gap-1.5 text-ink2 hover:text-retro-coral transition-colors text-sm font-medium"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:block">Sign out</span>
-            </button>
+            {user ? (
+              <>
+                <Link
+                  href="/account"
+                  className={cn(
+                    'hidden sm:flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full border-[1.5px] transition-all',
+                    pathname === '/account'
+                      ? 'bg-ink text-retro-lime border-ink'
+                      : 'border-transparent text-ink2 hover:border-ink hover:bg-paper hover:text-ink'
+                  )}
+                >
+                  {user.name}
+                  {isAdmin && <span className="text-[10px] font-mono font-bold bg-retro-coral text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Admin</span>}
+                </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  className="flex items-center gap-1.5 text-ink2 hover:text-retro-coral transition-colors text-sm font-medium"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:block">Sign out</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-mute bg-bg2 border-[1.5px] border-ink px-2.5 py-1 rounded-full">
+                  Guest
+                </span>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border-[1.5px] border-transparent text-ink2 hover:border-ink hover:bg-paper hover:text-ink transition-all"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:block">Login</span>
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-full border-[1.5px] border-ink bg-ink text-retro-lime transition-all"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:block">Register</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

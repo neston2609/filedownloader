@@ -6,10 +6,11 @@ import { listFtpDirectory } from '@/lib/ftp'
 import { listScpDirectory } from '@/lib/scp'
 import { checkCategoryBrowse, accessDenyResponse } from '@/lib/access'
 import { getHideRules, isHidden } from '@/lib/hide'
+import { getSiteSettings } from '@/lib/settings'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const isGuest = !session?.user?.id
 
   const { searchParams } = req.nextUrl
   const categoryId = searchParams.get('categoryId')
@@ -18,13 +19,21 @@ export async function GET(req: NextRequest) {
 
   if (!categoryId) return NextResponse.json({ error: 'categoryId required' }, { status: 400 })
 
-  // Browse check — members can list files in any non-hidden category.
-  // Download/Play are gated separately (see /api/download, /api/stream).
-  const isAdmin = session.user.role === 'ADMIN'
-  const access = await checkCategoryBrowse(session.user.id, categoryId, isAdmin)
-  if (!access.allowed) {
-    const deny = accessDenyResponse(access.reason!)
-    return NextResponse.json(deny.body, { status: deny.status })
+  if (isGuest) {
+    // Guest browsing: check that guest access is enabled, then skip per-user checks.
+    const settings = await getSiteSettings()
+    if (!settings.guestEnabled) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  } else {
+    // Authenticated: browse check — members can list files in any non-hidden category.
+    // Download/Play are gated separately (see /api/download, /api/stream).
+    const isAdmin = session!.user.role === 'ADMIN'
+    const access = await checkCategoryBrowse(session!.user.id, categoryId, isAdmin)
+    if (!access.allowed) {
+      const deny = accessDenyResponse(access.reason!)
+      return NextResponse.json(deny.body, { status: deny.status })
+    }
   }
 
   // Hide rules (global + this category) — applied to listings for everyone.

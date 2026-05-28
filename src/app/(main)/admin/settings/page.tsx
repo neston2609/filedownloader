@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { SlidersHorizontal, Save, Mail, Globe, Loader2, CheckCircle, XCircle, Send, CreditCard, Plus, Trash2, Banknote, QrCode, Phone, EyeOff, Megaphone } from 'lucide-react'
+import { SlidersHorizontal, Save, Mail, Globe, Loader2, CheckCircle, XCircle, Send, CreditCard, Plus, Trash2, Banknote, QrCode, EyeOff, Megaphone, Users } from 'lucide-react'
 import { HideRulesEditor } from '@/components/HideRulesEditor'
 import { BannersEditor } from '@/components/BannersEditor'
 
@@ -22,6 +22,8 @@ interface Settings {
   cardFooterNote: string
   memberOnlyNotice: string
   loginUnverifiedNotice: string
+  guestEnabled: boolean
+  guestDailyLimit: number
   hasSmtpPassword?: boolean
 }
 
@@ -59,7 +61,7 @@ export default function SettingsPage() {
       fetch('/api/plans').then(r => r.json()),
       fetch('/api/category-groups').then(r => r.json()),
     ]).then(([data, planData, groupData]) => {
-      setS({ ...data, smtpPassword: '' })
+      setS({ ...data, smtpPassword: '', guestEnabled: data.guestEnabled ?? false, guestDailyLimit: data.guestDailyLimit ?? 5 })
       setPlans(Array.isArray(planData) ? planData : [])
       setCatGroups(Array.isArray(groupData) ? groupData : [])
     }).finally(() => setLoading(false))
@@ -209,6 +211,47 @@ export default function SettingsPage() {
             <input className={inputCls} value={s.loginUnverifiedNotice} onChange={e => field('loginUnverifiedNotice', e.target.value)} placeholder="กรุณายืนยันการสมัครผ่านลิงก์ที่ส่งไปยังอีเมลของคุณ" />
             <p className="text-xs text-mute mt-1">ข้อความที่แสดงตอน login ถ้าสมาชิกยังไม่ได้ยืนยันอีเมล</p>
           </div>
+        </div>
+      </section>
+
+      {/* Guest Access */}
+      <section className="bg-paper border-[1.5px] border-ink rounded-retro p-6 mb-6 shadow-hard">
+        <h2 className="font-display text-2xl font-bold text-ink mb-1 flex items-center gap-2">
+          <Users className="w-5 h-5 text-retro-sky" /> Guest Access
+        </h2>
+        <p className="text-sm text-mute mb-4">
+          อนุญาตให้ผู้ที่ไม่ได้ Login เข้ามาชมคลิปได้ (Play เท่านั้น — ไม่สามารถ Download) โดยจำกัดจำนวนคลิปต่อวันต่อ IP
+        </p>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={s.guestEnabled}
+              onChange={e => field('guestEnabled', e.target.checked)}
+              className="w-4 h-4 accent-ink"
+            />
+            <div>
+              <span className="text-sm font-medium text-ink">เปิดให้ Guest เข้าชมได้</span>
+              <p className="text-xs text-mute">เมื่อปิด — ผู้ที่ไม่ได้ Login จะถูก redirect ไปหน้า Login ทันที</p>
+            </div>
+          </label>
+          {s.guestEnabled && (
+            <div className="ml-7">
+              <label className={labelCls}>จำนวนคลิปสูงสุดต่อวัน (ต่อ IP)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  className={inputCls + ' w-32'}
+                  value={s.guestDailyLimit}
+                  onChange={e => field('guestDailyLimit', Math.max(1, Number(e.target.value) || 5))}
+                />
+                <span className="text-sm text-mute">คลิป/วัน</span>
+              </div>
+              <p className="text-xs text-mute mt-1">เมื่อ Guest ดูครบจำนวนนี้แล้ว จะเห็นหน้าแจ้งให้สมัครสมาชิก</p>
+            </div>
+          )}
         </div>
       </section>
 

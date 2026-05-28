@@ -11,6 +11,13 @@ export default auth((req) => {
     return NextResponse.next()
   }
 
+  // Guest-accessible routes — no auth required.
+  // The individual pages and API routes enforce guest rules (play-only, daily quota).
+  const guestPaths = ['/download', '/play']
+  if (guestPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.next()
+  }
+
   if (!isAuthenticated) {
     return NextResponse.redirect(new URL('/login', req.url))
   }

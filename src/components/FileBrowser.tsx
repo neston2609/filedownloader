@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock, Terminal, Play } from 'lucide-react'
+import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock, Terminal, Play, UserPlus } from 'lucide-react'
 import { formatBytes } from '@/lib/utils'
 import { isVideo } from '@/lib/media'
 
@@ -47,10 +47,22 @@ interface FileBrowserProps {
   initialSubPath: string
   affiliateUrl: string | null
   canDownload?: boolean
+  isGuest?: boolean
+  guestDailyLimit?: number
   memberOnlyNotice?: string
 }
 
-export function FileBrowser({ category, paths, initialPathId, initialSubPath, affiliateUrl, canDownload = true, memberOnlyNotice = '' }: FileBrowserProps) {
+export function FileBrowser({
+  category,
+  paths,
+  initialPathId,
+  initialSubPath,
+  affiliateUrl,
+  canDownload = true,
+  isGuest = false,
+  guestDailyLimit = 5,
+  memberOnlyNotice = '',
+}: FileBrowserProps) {
   const [entries, setEntries] = useState<SmbEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +70,9 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
   const [subPath, setSubPath] = useState(initialSubPath)
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
   const [showNotice, setShowNotice] = useState(false)
+
+  // canPlay: guests can play (quota enforced server-side), members need canDownload
+  const canPlay = isGuest || canDownload
 
   const activePath = paths.find((p) => p.id === pathId) ?? null
 
@@ -73,8 +88,6 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
         throw new Error(data.error ?? 'Failed to load directory')
       }
       const data = await res.json()
-      // Hide folder-cover files (folder.jpg/png/...) — they're shown as the
-      // parent folder's thumbnail instead of listed as files.
       setEntries((data.entries ?? []).filter((e: SmbEntry) => !(!e.isDirectory && COVER_RE.test(e.name))))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -153,12 +166,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
     const filePath = buildFilePath(file)
     const playUrl = `/play/${encodeURIComponent(category.id)}?pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
 
-    // Browsers enforce "one popup per click" — so we use the one allowance
-    // for the affiliate URL (which MUST be a new tab), then navigate this
-    // tab to the player. Navigation isn't subject to popup blockers, so the
-    // player always opens; the affiliate gets the popup token, so it opens
-    // too. Result: affiliate in new tab + player in current tab.
-    if (affiliateUrl) {
+    if (affiliateUrl && !isGuest) {
       window.open(affiliateUrl, '_blank', 'noopener,noreferrer')
     }
     window.location.href = playUrl
@@ -171,7 +179,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
         Back to library
       </Link>
 
-      {/* Category banner: picture + title + larger description */}
+      {/* Category banner */}
       <div className="bg-paper border-[1.5px] border-ink rounded-retro overflow-hidden shadow-hard mb-6">
         <div className="flex flex-col sm:flex-row">
           {category.imageUrl && (
@@ -191,7 +199,26 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
         </div>
       </div>
 
-      {!canDownload && (
+      {/* Guest notice */}
+      {isGuest && (
+        <div className="bg-retro-sky/20 border-[1.5px] border-ink rounded-retro p-4 mb-6 shadow-hard-sm flex flex-wrap items-center gap-3 justify-between">
+          <div>
+            <p className="font-semibold text-ink text-sm">Guest — Play เท่านั้น</p>
+            <p className="text-xs text-ink2 mt-0.5">
+              ดูได้สูงสุด <span className="font-bold text-ink">{guestDailyLimit} คลิป/วัน</span> — สมัครสมาชิกเพื่อ Download และเข้าถึงเนื้อหาทั้งหมด
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/login" className="btn-retro inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border-[1.5px] border-ink bg-bg2 text-ink">Login</Link>
+            <Link href="/register" className="btn-retro inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border-[1.5px] border-ink bg-ink text-retro-lime">
+              <UserPlus className="w-3 h-3" /> Register
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Member access notice (non-guest, no access) */}
+      {!isGuest && !canDownload && (
         <div className="bg-retro-lemon/40 border-[1.5px] border-ink rounded-retro p-4 mb-6 shadow-hard-sm flex items-start gap-3">
           <Lock className="w-5 h-5 text-ink flex-shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -298,9 +325,10 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                     </div>
 
                     {!entry.isDirectory && (
-                      <div className={`flex items-center gap-1.5 ${canDownload ? 'opacity-0 group-hover:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}>
+                      <div className={`flex items-center gap-1.5 ${(canDownload || isGuest) ? 'opacity-0 group-hover:opacity-100 focus-within:opacity-100' : 'opacity-100'}`}>
+                        {/* Play button */}
                         {isVideo(entry.name) && (
-                          canDownload ? (
+                          canPlay ? (
                             <button
                               onClick={() => handlePlay(entry)}
                               title="Play in browser"
@@ -321,6 +349,8 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                             </button>
                           )
                         )}
+
+                        {/* Download button — always locked for guests */}
                         {canDownload ? (
                           <button
                             onClick={() => handleDownload(entry)}
@@ -334,7 +364,7 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
                           <button
                             type="button"
                             onClick={() => setShowNotice(true)}
-                            title={memberOnlyNotice}
+                            title={isGuest ? 'สมัครสมาชิกเพื่อ Download' : memberOnlyNotice}
                             className="flex items-center gap-1.5 bg-bg2 text-mute border-[1.5px] border-line text-xs font-semibold px-3 py-1.5 rounded-full cursor-not-allowed"
                           >
                             <Lock className="w-3.5 h-3.5" />
@@ -357,19 +387,35 @@ export function FileBrowser({ category, paths, initialPathId, initialSubPath, af
         </>
       )}
 
+      {/* Notice modal */}
       {showNotice && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm" onClick={() => setShowNotice(false)}>
           <div className="bg-paper border-[1.5px] border-ink rounded-retro shadow-hard-lg max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-retro-lemon border-[1.5px] border-ink shadow-hard-sm mb-4">
               <Lock className="w-7 h-7 text-ink" />
             </div>
-            <p className="text-ink font-medium mb-5">{memberOnlyNotice}</p>
-            <div className="flex items-center justify-center gap-2">
-              <Link href="/subscribe" className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-5 py-2.5 rounded-full text-sm">
-                ดูแพ็กเกจสมาชิก
-              </Link>
-              <button onClick={() => setShowNotice(false)} className="text-ink2 px-4 py-2.5 rounded-full text-sm hover:bg-bg2 transition-colors">ปิด</button>
-            </div>
+            {isGuest ? (
+              <>
+                <p className="text-ink font-medium mb-2">สมัครสมาชิกเพื่อ Download ไฟล์</p>
+                <p className="text-ink2 text-sm mb-5">Guest สามารถดูคลิปได้เท่านั้น ({guestDailyLimit} คลิป/วัน)</p>
+                <div className="flex items-center justify-center gap-2">
+                  <Link href="/register" className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-5 py-2.5 rounded-full text-sm">
+                    <UserPlus className="w-4 h-4" /> สมัครสมาชิก
+                  </Link>
+                  <button onClick={() => setShowNotice(false)} className="text-ink2 px-4 py-2.5 rounded-full text-sm hover:bg-bg2 transition-colors">ปิด</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-ink font-medium mb-5">{memberOnlyNotice}</p>
+                <div className="flex items-center justify-center gap-2">
+                  <Link href="/subscribe" className="btn-retro inline-flex items-center gap-1.5 bg-ink text-retro-lime border-[1.5px] border-ink font-semibold px-5 py-2.5 rounded-full text-sm">
+                    ดูแพ็กเกจสมาชิก
+                  </Link>
+                  <button onClick={() => setShowNotice(false)} className="text-ink2 px-4 py-2.5 rounded-full text-sm hover:bg-bg2 transition-colors">ปิด</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

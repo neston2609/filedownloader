@@ -12,9 +12,16 @@ interface Props {
 
 export default async function CategoryPage({ params, searchParams }: Props) {
   const session = await auth()
-  if (!session?.user?.id) redirect('/login')
-  const userId = session.user.id
-  const isAdmin = session.user.role === 'ADMIN'
+  const isGuest = !session?.user?.id
+
+  // Guest access guard
+  if (isGuest) {
+    const settings = await getPublicSiteSettings()
+    if (!settings.guestEnabled) redirect('/login')
+  }
+
+  const userId = session?.user?.id ?? null
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   const category = await prisma.category.findUnique({
     where: { id: params.categoryId },
@@ -27,16 +34,22 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   if (!category) notFound()
 
-  // Members may enter & browse any non-hidden category. Hidden categories are
-  // still blocked (redirect away). Downloading/playing is gated by canDownload.
-  const browse = await checkCategoryBrowse(userId, params.categoryId, isAdmin)
-  if (!browse.allowed) redirect('/download')
+  // Authenticated members: check browse permission (hidden categories block entry).
+  // Guests: always allow (no per-user hidden rules apply to guests).
+  if (!isGuest && userId) {
+    const browse = await checkCategoryBrowse(userId, params.categoryId, isAdmin)
+    if (!browse.allowed) redirect('/download')
+  }
 
-  const access = await checkCategoryAccess(userId, params.categoryId, isAdmin)
-  const canDownload = access.allowed
+  // canDownload: guests can never download; authenticated users depend on access check
+  let canDownload = false
+  if (!isGuest && userId) {
+    const access = await checkCategoryAccess(userId, params.categoryId, isAdmin)
+    canDownload = access.allowed
+  }
+
   const settings = await getPublicSiteSettings()
 
-  // Merge SMB + FTP paths into a unified list
   const paths = [
     ...category.smbPaths.map((p) => ({
       id: p.id,
@@ -77,6 +90,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       initialSubPath={searchParams.path ?? ''}
       affiliateUrl={affiliateUrl || null}
       canDownload={canDownload}
+      isGuest={isGuest}
+      guestDailyLimit={settings.guestDailyLimit}
       memberOnlyNotice={settings.memberOnlyNotice}
     />
   )

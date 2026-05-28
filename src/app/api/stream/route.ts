@@ -8,11 +8,13 @@ import { videoMimeType, isNativeBrowserVideo } from '@/lib/media'
 import { transcodeToMp4 } from '@/lib/transcode'
 import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
 import { getHideRules, isHidden } from '@/lib/hide'
+import { getSiteSettings } from '@/lib/settings'
+import { getClientIp, todayUtc, getGuestPlayCount, incrementGuestPlay } from '@/lib/guest'
 import path from 'path'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const isGuest = !session?.user?.id
 
   const { searchParams } = req.nextUrl
   const categoryId = searchParams.get('categoryId')
@@ -29,12 +31,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
   }
 
-  // Access check (active + not expired + not hidden + granted)
-  const isAdmin = session.user.role === 'ADMIN'
-  const access = await checkCategoryAccess(session.user.id, categoryId, isAdmin)
-  if (!access.allowed) {
-    const deny = accessDenyResponse(access.reason!)
-    return NextResponse.json(deny.body, { status: deny.status })
+  if (isGuest) {
+    // Guest: check feature flag + daily quota before streaming
+    const settings = await getSiteSettings()
+    if (!settings.guestEnabled) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const ip = getClientIp(req)
+    const date = todayUtc()
+    const used = await getGuestPlayCount(ip, date)
+    if (used >= settings.guestDailyLimit) {
+      return NextResponse.json(
+        { error: 'Daily guest limit reached', used, limit: settings.guestDailyLimit },
+        { status: 429 }
+      )
+    }
+    // Increment before streaming so fast repeated requests can't bypass the check
+    await incrementGuestPlay(ip, date)
+  } else {
+    // Authenticated: standard access check (active + not expired + not hidden + granted)
+    const isAdmin = session!.user.role === 'ADMIN'
+    const access = await checkCategoryAccess(session!.user.id, categoryId, isAdmin)
+    if (!access.allowed) {
+      const deny = accessDenyResponse(access.reason!)
+      return NextResponse.json(deny.body, { status: deny.status })
+    }
   }
 
   // Block streaming a hidden file (or one inside a hidden folder)

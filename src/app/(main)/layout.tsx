@@ -1,5 +1,4 @@
 import { auth } from '@/auth'
-import { redirect } from 'next/navigation'
 import { NavBar } from '@/components/NavBar'
 import { BannerStrip } from '@/components/BannerStrip'
 import { getPublicSiteSettings } from '@/lib/settings'
@@ -7,7 +6,9 @@ import { prisma } from '@/lib/prisma'
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session) redirect('/login')
+  // Note: /download and /play are guest-accessible — middleware no longer
+  // redirects unauthenticated users for those routes. Pages that still need
+  // a session (account, subscribe, admin) guard themselves.
 
   const [settings, banners] = await Promise.all([
     getPublicSiteSettings(),
@@ -21,7 +22,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen bg-bg flex flex-col">
       <NavBar
-        user={{ name: session.user?.name ?? '', role: session.user?.role ?? 'MEMBER' }}
+        user={session ? { name: session.user?.name ?? '', role: session.user?.role ?? 'MEMBER' } : null}
         siteTitle={settings.siteTitle}
       />
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">

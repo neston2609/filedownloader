@@ -53,6 +53,8 @@ export async function PATCH(req: NextRequest) {
       ...(body.cardFooterNote !== undefined && { cardFooterNote: body.cardFooterNote }),
       ...(body.memberOnlyNotice !== undefined && { memberOnlyNotice: body.memberOnlyNotice }),
       ...(body.loginUnverifiedNotice !== undefined && { loginUnverifiedNotice: body.loginUnverifiedNotice }),
+      ...(body.guestEnabled !== undefined && { guestEnabled: !!body.guestEnabled }),
+      ...(body.guestDailyLimit !== undefined && { guestDailyLimit: Math.max(1, Number(body.guestDailyLimit) || 5) }),
     },
   })
 
