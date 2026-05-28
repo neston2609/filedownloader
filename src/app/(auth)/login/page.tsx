@@ -3,7 +3,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, AtSign, LogIn, AlertCircle } from 'lucide-react'
+import { Lock, AtSign, LogIn, AlertCircle, Eye } from 'lucide-react'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -13,7 +13,7 @@ function LoginForm() {
   const [needsConfirm, setNeedsConfirm] = useState(false)
   const [resendMsg, setResendMsg] = useState('')
   const [resending, setResending] = useState(false)
-  const [branding, setBranding] = useState({ siteTitle: 'SecureFiles', heroHeading: '', heroSubheading: '' })
+  const [branding, setBranding] = useState({ siteTitle: 'SecureFiles', heroHeading: '', heroSubheading: '', guestEnabled: false })
   const router = useRouter()
   const params = useSearchParams()
 
@@ -192,6 +192,19 @@ function LoginForm() {
           Request access →
         </Link>
       </p>
+
+      {branding.guestEnabled && (
+        <div className="mt-4 pt-4 border-t border-line text-center">
+          <Link
+            href="/download"
+            className="btn-retro inline-flex items-center justify-center gap-2 w-full bg-bg2 text-ink border-[1.5px] border-ink font-medium py-2.5 rounded-full text-sm hover:bg-retro-sky/20 transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            เข้าชมแบบ Guest (ไม่ต้อง Login)
+          </Link>
+          <p className="text-[11px] text-mute mt-2">ดูคลิปได้จำกัด — ไม่สามารถ Download</p>
+        </div>
+      )}
     </div>
   )
 }
