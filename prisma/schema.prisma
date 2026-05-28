@@ -304,6 +304,28 @@ model Banner {
   createdAt DateTime @default(now())
 }
 
+// Access event log — tracks logins, guest browses, and plays.
+// categoryName / username are denormalized so history is preserved
+// even after a user or category is deleted.
+model AccessLog {
+  id           String   @id @default(cuid())
+  type         String   // LOGIN | GUEST_BROWSE | GUEST_PLAY | MEMBER_PLAY
+  ip           String   @default("")
+  userId       String?
+  userEmail    String?
+  username     String?
+  categoryId   String?
+  categoryName String?
+  filePath     String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([type])
+  @@index([ip])
+  @@index([userId])
+}
+
 model DownloadLog {
   id           String   @id @default(cuid())
   userId       String

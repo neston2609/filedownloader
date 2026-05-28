@@ -7,6 +7,8 @@ import { listScpDirectory } from '@/lib/scp'
 import { checkCategoryBrowse, accessDenyResponse } from '@/lib/access'
 import { getHideRules, isHidden } from '@/lib/hide'
 import { getSiteSettings } from '@/lib/settings'
+import { getClientIp } from '@/lib/guest'
+import { logAccess } from '@/lib/access-log'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -24,6 +26,19 @@ export async function GET(req: NextRequest) {
     const settings = await getSiteSettings()
     if (!settings.guestEnabled) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    // Log guest browse on root entry (subPath empty) to avoid per-folder spam
+    if (!searchParams.get('subPath')) {
+      const category = categoryId
+        ? await prisma.category.findUnique({ where: { id: categoryId }, select: { name: true } })
+        : null
+      logAccess({
+        type: 'GUEST_BROWSE',
+        ip: getClientIp(req),
+        categoryId: categoryId ?? undefined,
+        categoryName: category?.name ?? undefined,
+        userAgent: req.headers.get('user-agent') ?? undefined,
+      })
     }
   } else {
     // Authenticated: browse check — members can list files in any non-hidden category.

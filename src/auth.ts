@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logAccess } from '@/lib/access-log'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -11,7 +12,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: 'Email or Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null
 
         const identifier = (credentials.email as string).trim()
@@ -31,6 +32,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const valid = await bcrypt.compare(credentials.password as string, user.password)
         if (!valid) return null
+
+        // Log successful login (fire-and-forget)
+        const ip =
+          request?.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+          request?.headers?.get('x-real-ip') ||
+          ''
+        logAccess({
+          type: 'LOGIN',
+          ip,
+          userId: user.id,
+          userEmail: user.email,
+          username: user.username,
+          userAgent: request?.headers?.get('user-agent') ?? undefined,
+        })
 
         return {
           id: user.id,

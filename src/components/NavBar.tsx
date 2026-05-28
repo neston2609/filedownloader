@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
-import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard, LogIn, UserPlus } from 'lucide-react'
+import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard, LogIn, UserPlus, ActivitySquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavBarProps {
@@ -60,6 +60,7 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
       title: 'System',
       items: [
         { href: '/admin/settings', label: 'Site Settings', desc: 'Branding, SMTP, payment, plans', icon: SlidersHorizontal, swatch: 'bg-retro-grape' },
+        { href: '/admin/access-logs', label: 'Access Log', desc: 'Login, guest browse & play events', icon: ActivitySquare, swatch: 'bg-retro-coral' },
       ],
     },
   ]

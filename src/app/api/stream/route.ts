@@ -10,6 +10,7 @@ import { checkCategoryAccess, accessDenyResponse } from '@/lib/access'
 import { getHideRules, isHidden } from '@/lib/hide'
 import { getSiteSettings } from '@/lib/settings'
 import { getClientIp, todayUtc, getGuestPlayCount, incrementGuestPlay, memberPlayKey } from '@/lib/guest'
+import { logAccess } from '@/lib/access-log'
 import path from 'path'
 
 export async function GET(req: NextRequest) {
@@ -48,6 +49,16 @@ export async function GET(req: NextRequest) {
     }
     // Increment before streaming so fast repeated requests can't bypass the check
     await incrementGuestPlay(ip, date)
+    // Log guest play (fire-and-forget)
+    const catGuest = await prisma.category.findUnique({ where: { id: categoryId }, select: { name: true } }).catch(() => null)
+    logAccess({
+      type: 'GUEST_PLAY',
+      ip,
+      categoryId,
+      categoryName: catGuest?.name ?? undefined,
+      filePath,
+      userAgent: req.headers.get('user-agent') ?? undefined,
+    })
   } else {
     const isAdmin = session!.user.role === 'ADMIN'
     const access = await checkCategoryAccess(session!.user.id, categoryId, isAdmin)
@@ -70,6 +81,17 @@ export async function GET(req: NextRequest) {
         )
       }
       await incrementGuestPlay(key, date)
+      // Log limited-member play (fire-and-forget)
+      const catMember = await prisma.category.findUnique({ where: { id: categoryId }, select: { name: true } }).catch(() => null)
+      logAccess({
+        type: 'MEMBER_PLAY',
+        ip: getClientIp(req),
+        userId: session!.user.id,
+        categoryId,
+        categoryName: catMember?.name ?? undefined,
+        filePath,
+        userAgent: req.headers.get('user-agent') ?? undefined,
+      })
     }
     // If access.allowed === true: no quota — fall through to stream normally.
   }
