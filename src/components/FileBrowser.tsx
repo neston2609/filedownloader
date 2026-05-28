@@ -170,7 +170,7 @@ export function FileBrowser({
     const filePath = buildFilePath(file)
     const playUrl = `/play/${encodeURIComponent(category.id)}?pathId=${encodeURIComponent(pathId)}&filePath=${encodeURIComponent(filePath)}`
 
-    if (affiliateUrl && !isGuest) {
+    if (affiliateUrl) {
       window.open(affiliateUrl, '_blank', 'noopener,noreferrer')
     }
     window.location.href = playUrl
