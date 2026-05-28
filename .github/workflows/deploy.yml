@@ -1,0 +1,53 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+# Prevent concurrent deploys — if a deploy is already running, cancel it
+# and run the latest commit instead.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: SSH Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /app/filedownloader
+
+            echo "=== git sync ==="
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "=== npm install ==="
+            npm install --no-audit --no-fund
+
+            echo "=== prisma generate ==="
+            npx prisma generate
+
+            echo "=== prisma db push ==="
+            npx prisma db push
+
+            echo "=== build ==="
+            npm run build
+
+            echo "=== restart PM2 ==="
+            pm2 restart file_downloader
+            pm2 save
+
+            echo "DEPLOY_OK"
