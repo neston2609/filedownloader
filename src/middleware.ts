@@ -5,6 +5,11 @@ export default auth((req) => {
   const { pathname } = req.nextUrl
   const isAuthenticated = !!req.auth
 
+  // Root always redirects to /download (both guests and logged-in users)
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL('/download', req.url))
+  }
+
   const publicPaths = ['/login', '/register']
   if (publicPaths.includes(pathname)) {
     if (isAuthenticated) return NextResponse.redirect(new URL('/download', req.url))

@@ -14,11 +14,15 @@ export async function getPublicSiteSettings() {
   const s = await getSiteSettings()
   return {
     siteTitle: s.siteTitle,
+    siteTagline: s.siteTagline,
+    logoUrl: s.logoUrl,
     heroHeading: s.heroHeading,
     heroSubheading: s.heroSubheading,
     cardFooterNote: s.cardFooterNote,
     memberOnlyNotice: s.memberOnlyNotice,
+    loginUnverifiedNotice: s.loginUnverifiedNotice,
     guestEnabled: s.guestEnabled,
     guestDailyLimit: s.guestDailyLimit,
+    fileBrowserPageSize: s.fileBrowserPageSize,
   }
 }

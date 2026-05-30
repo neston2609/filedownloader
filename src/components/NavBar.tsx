@@ -3,15 +3,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
-import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard, LogIn, UserPlus, ActivitySquare } from 'lucide-react'
+import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard, LogIn, UserPlus, ActivitySquare, Globe, Mail, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavBarProps {
   user: { name: string; role: string } | null
   siteTitle?: string
+  siteTagline?: string
+  logoUrl?: string
 }
 
-export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
+export function NavBar({ user, siteTitle = 'SecureFiles', siteTagline = '', logoUrl = '' }: NavBarProps) {
   const pathname = usePathname()
   const isAdmin = user?.role === 'ADMIN'
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -45,6 +47,8 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
       items: [
         { href: '/admin/categories', label: 'Categories', desc: 'Categories, groups & paths', icon: FolderOpen, swatch: 'bg-retro-lemon' },
         { href: '/admin/affiliate', label: 'Affiliate', desc: 'Global affiliate link', icon: Link2, swatch: 'bg-retro-coral' },
+        { href: '/admin/settings/banners', label: 'Banners', desc: 'Ad banners on all pages', icon: ActivitySquare, swatch: 'bg-retro-sky' },
+        { href: '/admin/settings/hide-rules', label: 'Hide Rules', desc: 'Hidden files & folders', icon: EyeOff, swatch: 'bg-retro-grape' },
       ],
     },
     {
@@ -59,7 +63,11 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
     {
       title: 'System',
       items: [
-        { href: '/admin/settings', label: 'Site Settings', desc: 'Branding, SMTP, payment, plans', icon: SlidersHorizontal, swatch: 'bg-retro-grape' },
+        { href: '/admin/settings/branding', label: 'Branding', desc: 'Logo, site title & hero text', icon: Globe, swatch: 'bg-retro-lemon' },
+        { href: '/admin/settings/guest', label: 'Guest Access', desc: 'Guest play rules & quota', icon: Users, swatch: 'bg-retro-sky' },
+        { href: '/admin/settings/browser', label: 'File Browser', desc: 'Items per page & display', icon: SlidersHorizontal, swatch: 'bg-retro-mint' },
+        { href: '/admin/settings/payment', label: 'Payment & Plans', desc: 'Bank details, QR & plans', icon: CreditCard, swatch: 'bg-retro-coral' },
+        { href: '/admin/settings/email', label: 'Email (SMTP)', desc: 'Outgoing email settings', icon: Mail, swatch: 'bg-retro-grape' },
         { href: '/admin/access-logs', label: 'Access Log', desc: 'Login, guest browse & play events', icon: ActivitySquare, swatch: 'bg-retro-coral' },
       ],
     },
@@ -91,10 +99,18 @@ export function NavBar({ user, siteTitle = 'SecureFiles' }: NavBarProps) {
           {/* Logo + primary nav */}
           <div className="flex items-center gap-6 min-w-0">
             <Link href="/download" className="flex items-center gap-2.5 flex-shrink-0">
-              <span className="w-9 h-9 rounded-xl bg-ink grid place-items-center shadow-hard-sm shadow-retro-coral">
-                <span className="font-mono font-bold text-retro-lime text-lg leading-none">SF</span>
+              {logoUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={`/api${logoUrl}`} alt={siteTitle} className="w-9 h-9 rounded-xl object-contain shadow-hard-sm border-[1.5px] border-ink bg-paper" />
+              ) : (
+                <span className="w-9 h-9 rounded-xl bg-ink grid place-items-center shadow-hard-sm shadow-retro-coral flex-shrink-0">
+                  <span className="font-mono font-bold text-retro-lime text-lg leading-none">SF</span>
+                </span>
+              )}
+              <span className="hidden sm:block leading-tight">
+                <span className="font-display font-extrabold text-xl text-ink tracking-tight block">{siteTitle}</span>
+                {siteTagline && <span className="text-[11px] text-ink2 font-medium tracking-wide block">{siteTagline}</span>}
               </span>
-              <span className="hidden sm:block font-display font-extrabold text-xl text-ink tracking-tight">{siteTitle}</span>
             </Link>
 
             <div className="flex items-center gap-1 flex-wrap">

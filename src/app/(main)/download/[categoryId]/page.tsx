@@ -98,6 +98,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       isGuest={isGuest}
       guestDailyLimit={settings.guestDailyLimit}
       memberOnlyNotice={settings.memberOnlyNotice}
+      pageSize={settings.fileBrowserPageSize ?? 20}
     />
   )
 }

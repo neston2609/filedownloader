@@ -14,11 +14,10 @@ export default async function DownloadPage() {
   const session = await auth()
   const isGuest = !session?.user?.id
 
-  // If guest, check that guest access is enabled
-  if (isGuest) {
-    const settings = await getPublicSiteSettings()
-    if (!settings.guestEnabled) redirect('/login')
-  }
+  // Fetch settings once for all paths
+  const settings = await getPublicSiteSettings()
+
+  if (isGuest && !settings.guestEnabled) redirect('/login')
 
   const userId = session?.user?.id ?? null
   const isAdmin = session?.user?.role === 'ADMIN'
@@ -84,12 +83,19 @@ export default async function DownloadPage() {
             <span className="w-2 h-2 rounded-full bg-retro-coral" />
             <span className="font-mono text-[11px] uppercase tracking-widest text-ink2">Member Library</span>
           </div>
-          <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink leading-[1.02] tracking-tight">
-            Your <span className="swatch bg-retro-lime">downloads</span>,
-            <br />
-            one click <span className="swatch coral bg-retro-coral">away</span>
-          </h1>
-          <p className="text-ink2 mt-4 text-lg max-w-xl">Browse every category you have access to. Click a card to dive into the files.</p>
+          {settings.heroHeading ? (
+            <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink leading-[1.02] tracking-tight">
+              {settings.heroHeading}
+            </h1>
+          ) : (
+            <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink leading-[1.02] tracking-tight">
+              Your <span className="swatch bg-retro-lime">downloads</span>,
+              <br />one click <span className="swatch coral bg-retro-coral">away</span>
+            </h1>
+          )}
+          <p className="text-ink2 mt-4 text-lg max-w-xl">
+            {settings.heroSubheading || 'Browse every category you have access to. Click a card to dive into the files.'}
+          </p>
         </div>
 
         {categories.length === 0 ? (
@@ -102,7 +108,6 @@ export default async function DownloadPage() {
   }
 
   // ——— Guest view ———
-  const settings = await getPublicSiteSettings()
   const categories = rawCategories.map((c) => ({
     ...c,
     imageUrl: c.imageUrl && c.imageUrl.startsWith('/uploads/') ? `/api${c.imageUrl}` : c.imageUrl,
@@ -135,9 +140,11 @@ export default async function DownloadPage() {
           <span className="font-mono text-[11px] uppercase tracking-widest text-ink2">Guest Preview</span>
         </div>
         <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink leading-[1.02] tracking-tight">
-          Preview our <span className="swatch bg-retro-sky">content</span>
+          {settings.heroHeading || 'Preview our content'}
         </h1>
-        <p className="text-ink2 mt-4 text-lg max-w-xl">สมัครสมาชิกเพื่อ download ไฟล์และเข้าถึงเนื้อหาทั้งหมด</p>
+        <p className="text-ink2 mt-4 text-lg max-w-xl">
+          {settings.heroSubheading || 'สมัครสมาชิกเพื่อ download ไฟล์และเข้าถึงเนื้อหาทั้งหมด'}
+        </p>
       </div>
 
       {categories.length === 0 ? (

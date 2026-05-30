@@ -237,6 +237,13 @@ model SiteSettings {
   // Message shown at login when the account email isn't confirmed yet
   loginUnverifiedNotice String @default("กรุณายืนยันการสมัครผ่านลิงก์ที่ส่งไปยังอีเมลของคุณ")
 
+  // Logo & tagline
+  logoUrl             String  @default("")
+  siteTagline         String  @default("")
+
+  // File browser pagination (items per page)
+  fileBrowserPageSize Int     @default(20)
+
   // Guest (unauthenticated) access — play-only, no download
   guestEnabled    Boolean @default(false)
   guestDailyLimit Int     @default(5)

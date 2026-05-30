@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Folder, FileText, Download, ChevronRight, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock, Terminal, Play, UserPlus } from 'lucide-react'
+import { Folder, FileText, Download, ChevronRight, ChevronLeft, Home, Loader2, AlertCircle, ArrowLeft, Server, HardDrive, Lock, Terminal, Play, UserPlus } from 'lucide-react'
 import { formatBytes } from '@/lib/utils'
 import { isVideo } from '@/lib/media'
 
@@ -51,6 +51,7 @@ interface FileBrowserProps {
   isGuest?: boolean
   guestDailyLimit?: number
   memberOnlyNotice?: string
+  pageSize?: number
 }
 
 export function FileBrowser({
@@ -64,6 +65,7 @@ export function FileBrowser({
   isGuest = false,
   guestDailyLimit = 5,
   memberOnlyNotice = '',
+  pageSize = 20,
 }: FileBrowserProps) {
   const [entries, setEntries] = useState<SmbEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +74,7 @@ export function FileBrowser({
   const [subPath, setSubPath] = useState(initialSubPath)
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
   const [showNotice, setShowNotice] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   // canPlay: explicitly passed, or fall back to old logic
   const canPlay = canPlayProp !== undefined ? canPlayProp : (isGuest || canDownload)
@@ -107,6 +110,11 @@ export function FileBrowser({
 
   const folderParts = subPath ? subPath.split('/').filter(Boolean) : []
 
+  // Pagination helpers (applied to non-directory entries list in render)
+  const totalPages = Math.max(1, Math.ceil(entries.length / pageSize))
+  const safePage = Math.min(currentPage, totalPages)
+  const pagedEntries = entries.slice((safePage - 1) * pageSize, safePage * pageSize)
+
   function selectPath(newPathId: string) {
     setPathId(newPathId)
     setSubPath('')
@@ -115,6 +123,7 @@ export function FileBrowser({
 
   function navigateTo(sp: string) {
     setSubPath(sp)
+    setCurrentPage(1)
     const params = new URLSearchParams()
     if (pathId) params.set('pathId', pathId)
     if (sp) params.set('path', sp)
@@ -318,7 +327,7 @@ export function FileBrowser({
                     <span className="text-mute text-sm font-mono">..</span>
                   </button>
                 )}
-                {entries.map((entry) => (
+                {pagedEntries.map((entry) => (
                   <div key={entry.name} className="flex items-center gap-3 px-4 py-3 hover:bg-bg2/50 transition-colors group">
                     {entry.isDirectory ? (
                       <FolderThumb coverUrl={coverUrlFor(entry.name)} />
@@ -392,6 +401,34 @@ export function FileBrowser({
               </div>
             )}
           </div>
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-3 px-1">
+              <span className="text-xs text-ink2">
+                {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, entries.length)} จาก {entries.length} รายการ
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={safePage <= 1}
+                  className="p-1.5 rounded-lg border-[1.5px] border-ink bg-bg2 disabled:opacity-40 hover:bg-paper transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="px-3 py-1 text-xs font-semibold text-ink">
+                  หน้า {safePage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage >= totalPages}
+                  className="p-1.5 rounded-lg border-[1.5px] border-ink bg-bg2 disabled:opacity-40 hover:bg-paper transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {affiliateUrl && canDownload && (
             <p className="text-xs text-mute mt-3 text-center">
