@@ -7,6 +7,7 @@ interface BrandingFields {
   siteTitle: string
   siteTagline: string
   logoUrl: string
+  logoSize: number
   heroHeading: string
   heroSubheading: string
   contactEmail: string
@@ -14,6 +15,14 @@ interface BrandingFields {
   memberOnlyNotice: string
   loginUnverifiedNotice: string
 }
+
+const LOGO_SIZE_PRESETS = [
+  { label: 'S — 36px', value: 36 },
+  { label: 'M — 48px', value: 48 },
+  { label: 'L — 64px', value: 64 },
+  { label: 'XL — 80px', value: 80 },
+  { label: 'XXL — 100px', value: 100 },
+]
 
 export default function BrandingPage() {
   const [s, setS] = useState<BrandingFields | null>(null)
@@ -23,6 +32,7 @@ export default function BrandingPage() {
     fetch('/api/settings').then(r => r.json()).then(data => setS({
       siteTitle: data.siteTitle ?? '',
       siteTagline: data.siteTagline ?? '',
+      logoSize: data.logoSize ?? 36,
       logoUrl: data.logoUrl ?? '',
       heroHeading: data.heroHeading ?? '',
       heroSubheading: data.heroSubheading ?? '',
@@ -68,6 +78,7 @@ export default function BrandingPage() {
       onSave={() => patchSettings({
         siteTitle: s.siteTitle,
         siteTagline: s.siteTagline,
+        logoSize: s.logoSize,
         heroHeading: s.heroHeading,
         heroSubheading: s.heroSubheading,
         contactEmail: s.contactEmail,
@@ -102,6 +113,53 @@ export default function BrandingPage() {
             )}
             <p className="text-[11px] text-mute">PNG/JPG/SVG · max 2MB</p>
           </div>
+        </div>
+
+        {/* Logo size */}
+        <div className="mt-3">
+          <label className={labelCls}>Logo Size (NavBar)</label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {LOGO_SIZE_PRESETS.map(p => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => field('logoSize', p.value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border-[1.5px] transition-colors ${
+                  s.logoSize === p.value
+                    ? 'bg-ink text-retro-lime border-ink'
+                    : 'bg-bg2 text-ink2 border-line hover:border-ink hover:text-ink'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+            {/* Custom input */}
+            <div className="flex items-center gap-1">
+              <input
+                type="number" min={24} max={120}
+                value={s.logoSize}
+                onChange={e => field('logoSize', Math.max(24, Math.min(120, Number(e.target.value) || 36)))}
+                className="w-20 bg-bg2 border-[1.5px] border-ink rounded-lg px-2 py-1 text-xs text-ink text-center focus:outline-none focus:ring-2 focus:ring-retro-sky"
+              />
+              <span className="text-xs text-mute">px</span>
+            </div>
+          </div>
+          {/* Live preview */}
+          <div className="mt-3 flex items-center gap-3 p-3 bg-bg2 rounded-lg border border-line">
+            {logoDisplayUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoDisplayUrl} alt="preview" style={{ width: s.logoSize, height: s.logoSize }} className="rounded-xl object-contain border-[1.5px] border-ink bg-paper flex-shrink-0" />
+            ) : (
+              <span style={{ width: s.logoSize, height: s.logoSize }} className="rounded-xl bg-ink grid place-items-center flex-shrink-0">
+                <span className="font-mono font-bold text-retro-lime" style={{ fontSize: Math.max(10, s.logoSize * 0.45) }}>SF</span>
+              </span>
+            )}
+            <div className="leading-tight">
+              <span className="font-display font-extrabold text-xl text-ink block">{s.siteTitle || 'SecureFiles'}</span>
+              {s.siteTagline && <span className="text-[11px] text-ink2 block">{s.siteTagline}</span>}
+            </div>
+          </div>
+          <p className="text-[11px] text-mute mt-1">ตัวอย่าง NavBar (ขนาดจริงอาจต่างกันเล็กน้อย)</p>
         </div>
       </div>
 

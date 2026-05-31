@@ -56,6 +56,7 @@ export async function PATCH(req: NextRequest) {
       ...(body.guestEnabled !== undefined && { guestEnabled: !!body.guestEnabled }),
       ...(body.guestDailyLimit !== undefined && { guestDailyLimit: Math.max(1, Number(body.guestDailyLimit) || 5) }),
       ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
+      ...(body.logoSize !== undefined && { logoSize: Math.max(24, Math.min(120, Number(body.logoSize) || 36)) }),
       ...(body.siteTagline !== undefined && { siteTagline: body.siteTagline }),
       ...(body.fileBrowserPageSize !== undefined && { fileBrowserPageSize: Math.max(5, Math.min(200, Number(body.fileBrowserPageSize) || 20)) }),
     },

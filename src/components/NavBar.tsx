@@ -11,9 +11,12 @@ interface NavBarProps {
   siteTitle?: string
   siteTagline?: string
   logoUrl?: string
+  logoSize?: number
 }
 
-export function NavBar({ user, siteTitle = 'SecureFiles', siteTagline = '', logoUrl = '' }: NavBarProps) {
+export function NavBar({ user, siteTitle = 'SecureFiles', siteTagline = '', logoUrl = '', logoSize = 36 }: NavBarProps) {
+  // NavBar height grows with the logo (min 64px, logo + 16px padding on each side)
+  const navH = Math.max(64, logoSize + 32)
   const pathname = usePathname()
   const isAdmin = user?.role === 'ADMIN'
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -95,16 +98,24 @@ export function NavBar({ user, siteTitle = 'SecureFiles', siteTagline = '', logo
   return (
     <nav className="sticky top-0 z-40 bg-bg/85 backdrop-blur-md border-b border-line">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[72px] gap-4">
+        <div className="flex items-center justify-between gap-4" style={{ height: navH }}>
           {/* Logo + primary nav */}
           <div className="flex items-center gap-6 min-w-0">
             <Link href="/download" className="flex items-center gap-2.5 flex-shrink-0">
               {logoUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={`/api${logoUrl}`} alt={siteTitle} className="w-9 h-9 rounded-xl object-contain shadow-hard-sm border-[1.5px] border-ink bg-paper" />
+                <img
+                  src={`/api${logoUrl}`}
+                  alt={siteTitle}
+                  style={{ width: logoSize, height: logoSize }}
+                  className="rounded-xl object-contain shadow-hard-sm border-[1.5px] border-ink bg-paper flex-shrink-0"
+                />
               ) : (
-                <span className="w-9 h-9 rounded-xl bg-ink grid place-items-center shadow-hard-sm shadow-retro-coral flex-shrink-0">
-                  <span className="font-mono font-bold text-retro-lime text-lg leading-none">SF</span>
+                <span
+                  style={{ width: logoSize, height: logoSize }}
+                  className="rounded-xl bg-ink grid place-items-center shadow-hard-sm shadow-retro-coral flex-shrink-0"
+                >
+                  <span className="font-mono font-bold text-retro-lime leading-none" style={{ fontSize: Math.max(10, logoSize * 0.45) }}>SF</span>
                 </span>
               )}
               <span className="hidden sm:block leading-tight">

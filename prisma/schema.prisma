@@ -239,6 +239,7 @@ model SiteSettings {
 
   // Logo & tagline
   logoUrl             String  @default("")
+  logoSize            Int     @default(36)   // px — shown in NavBar
   siteTagline         String  @default("")
 
   // File browser pagination (items per page)

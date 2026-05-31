@@ -16,6 +16,7 @@ export async function getPublicSiteSettings() {
     siteTitle: s.siteTitle,
     siteTagline: s.siteTagline,
     logoUrl: s.logoUrl,
+    logoSize: s.logoSize,
     heroHeading: s.heroHeading,
     heroSubheading: s.heroSubheading,
     cardFooterNote: s.cardFooterNote,
