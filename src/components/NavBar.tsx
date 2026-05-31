@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
-import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard, LogIn, UserPlus, ActivitySquare, Globe, Mail, EyeOff } from 'lucide-react'
+import { Download, Settings, Users, Server, Link2, LogOut, FolderOpen, HardDrive, Terminal, Lock, ChevronDown, SlidersHorizontal, CreditCard, LogIn, UserPlus, ActivitySquare, Globe, Mail, EyeOff, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavBarProps {
@@ -12,9 +12,10 @@ interface NavBarProps {
   siteTagline?: string
   logoUrl?: string
   logoSize?: number
+  homeUrl?: string
 }
 
-export function NavBar({ user, siteTitle = 'SecureFiles', siteTagline = '', logoUrl = '', logoSize = 36 }: NavBarProps) {
+export function NavBar({ user, siteTitle = 'SecureFiles', siteTagline = '', logoUrl = '', logoSize = 36, homeUrl = '' }: NavBarProps) {
   // NavBar height grows with the logo (min 64px, logo + 16px padding on each side)
   const navH = Math.max(64, logoSize + 32)
   const pathname = usePathname()
@@ -125,6 +126,21 @@ export function NavBar({ user, siteTitle = 'SecureFiles', siteTagline = '', logo
             </Link>
 
             <div className="flex items-center gap-1 flex-wrap">
+              {/* Home button — first, shown only when homeUrl is configured */}
+              {homeUrl && (
+                homeUrl.startsWith('http') ? (
+                  <a href={homeUrl} target="_blank" rel="noopener noreferrer" className={linkClass(false)}>
+                    <Home className="w-4 h-4" />
+                    <span className="hidden md:block">Home</span>
+                  </a>
+                ) : (
+                  <Link href={homeUrl} className={linkClass(pathname === homeUrl)}>
+                    <Home className="w-4 h-4" />
+                    <span className="hidden md:block">Home</span>
+                  </Link>
+                )
+              )}
+
               {navItems.map(({ href, label, icon: Icon }) => {
                 const exactOnly = href === '/download' || href === '/admin'
                 const active = exactOnly ? pathname === href : (pathname === href || pathname.startsWith(href + '/'))

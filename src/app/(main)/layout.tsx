@@ -27,6 +27,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
         siteTagline={settings.siteTagline}
         logoUrl={settings.logoUrl && settings.logoUrl.startsWith('/uploads/') ? settings.logoUrl : ''}
         logoSize={settings.logoSize ?? 36}
+        homeUrl={settings.homeUrl ?? ''}
       />
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         {children}

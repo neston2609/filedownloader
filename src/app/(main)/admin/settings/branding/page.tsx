@@ -8,6 +8,7 @@ interface BrandingFields {
   siteTagline: string
   logoUrl: string
   logoSize: number
+  homeUrl: string
   heroHeading: string
   heroSubheading: string
   contactEmail: string
@@ -33,6 +34,7 @@ export default function BrandingPage() {
       siteTitle: data.siteTitle ?? '',
       siteTagline: data.siteTagline ?? '',
       logoSize: data.logoSize ?? 36,
+      homeUrl: data.homeUrl ?? '',
       logoUrl: data.logoUrl ?? '',
       heroHeading: data.heroHeading ?? '',
       heroSubheading: data.heroSubheading ?? '',
@@ -79,6 +81,7 @@ export default function BrandingPage() {
         siteTitle: s.siteTitle,
         siteTagline: s.siteTagline,
         logoSize: s.logoSize,
+        homeUrl: s.homeUrl,
         heroHeading: s.heroHeading,
         heroSubheading: s.heroSubheading,
         contactEmail: s.contactEmail,
@@ -176,6 +179,31 @@ export default function BrandingPage() {
           <p className="text-xs text-mute mt-1">แสดงใต้ชื่อเว็บ ตัวเล็กกว่า (ไม่บังคับ)</p>
         </div>
       </div>
+
+      {/* Home button URL */}
+      <div>
+        <label className={labelCls}>Home Button URL</label>
+        <input
+          className={inputCls}
+          value={s.homeUrl}
+          onChange={e => field('homeUrl', e.target.value)}
+          placeholder="https://yourshop.com หรือ /download"
+        />
+        <p className="text-xs text-mute mt-1">
+          URL ของปุ่ม <span className="font-semibold text-ink">Home</span> ในแถบ NavBar — เว้นว่างไว้เพื่อซ่อนปุ่ม
+          {' '}· ถ้าเป็น https:// จะเปิดแท็บใหม่
+        </p>
+        {s.homeUrl && (
+          <p className="mt-1 text-xs">
+            Preview:{' '}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border-[1.5px] border-ink bg-bg2 text-ink text-xs font-medium">
+              🏠 Home → {s.homeUrl}
+            </span>
+          </p>
+        )}
+      </div>
+
+      <hr className="border-line" />
 
       {/* Hero */}
       <div>
