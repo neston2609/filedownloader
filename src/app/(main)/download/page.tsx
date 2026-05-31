@@ -7,8 +7,38 @@ import { isMembershipExpired, membershipExpiry } from '@/lib/membership'
 import { ExpiredPopup } from '@/components/ExpiredPopup'
 import { formatDate } from '@/lib/utils'
 import { getPublicSiteSettings } from '@/lib/settings'
+import type { Metadata } from 'next'
 
 const ACCENT_CYCLE = ['bg-retro-lime', 'bg-retro-sky', 'bg-retro-coral', 'bg-retro-lemon', 'bg-retro-mint', 'bg-retro-grape']
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getPublicSiteSettings().catch(() => null)
+  const title = settings?.siteTitle
+    ? settings.siteTitle
+    : 'Korean Variety Shows with Thai Subtitles'
+  const description =
+    settings?.heroSubheading ||
+    'Browse Korean variety shows with Thai subtitles through the Japan Toy Shop member download portal.'
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: '/download',
+    },
+    openGraph: {
+      title,
+      description,
+      url: '/download',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  }
+}
 
 export default async function DownloadPage() {
   const session = await auth()

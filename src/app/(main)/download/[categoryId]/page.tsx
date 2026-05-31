@@ -4,10 +4,53 @@ import { redirect, notFound } from 'next/navigation'
 import { FileBrowser } from '@/components/FileBrowser'
 import { checkCategoryAccess, checkCategoryBrowse } from '@/lib/access'
 import { getPublicSiteSettings } from '@/lib/settings'
+import type { Metadata } from 'next'
 
 interface Props {
   params: { categoryId: string }
   searchParams: { pathId?: string; path?: string }
+}
+
+export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
+  const category = await prisma.category
+    .findUnique({
+      where: { id: params.categoryId },
+      select: { name: true, description: true, imageUrl: true },
+    })
+    .catch(() => null)
+
+  if (!category) {
+    return {
+      title: 'Content Not Found',
+      robots: { index: false, follow: false },
+    }
+  }
+
+  const description =
+    category.description ||
+    `Preview ${category.name} and sign in for member download access through Japan Toy Shop.`
+  const imageUrl = category.imageUrl?.startsWith('/uploads/') ? `/api${category.imageUrl}` : category.imageUrl || undefined
+
+  return {
+    title: category.name,
+    description,
+    alternates: {
+      canonical: `/download/${params.categoryId}`,
+    },
+    openGraph: {
+      title: `${category.name} | Japan Toy Shop`,
+      description,
+      url: `/download/${params.categoryId}`,
+      type: 'website',
+      ...(imageUrl ? { images: [{ url: imageUrl }] } : {}),
+    },
+    twitter: {
+      card: imageUrl ? 'summary_large_image' : 'summary',
+      title: `${category.name} | Japan Toy Shop`,
+      description,
+      ...(imageUrl ? { images: [imageUrl] } : {}),
+    },
+  }
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
