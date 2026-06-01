@@ -101,13 +101,17 @@ export function AdminSubscriptions({ initial }: { initial: Req[] }) {
                       <strong>{r.planName}</strong> · {r.months} mo · ฿{r.priceThb.toLocaleString()}
                     </p>
                     <p className="text-xs text-mute mt-0.5">Requested {formatDate(r.createdAt)}{r.paidAt ? ` · Paid ${formatDate(r.paidAt)}` : ''}</p>
-                    {(r.previousExpiry || r.newExpiry) && (
+                    {r.newExpiry ? (
                       <p className="text-xs text-ink2 mt-1 flex items-center gap-1">
                         {r.previousExpiry ? formatDate(r.previousExpiry) : 'none'}
                         <ArrowRight className="w-3 h-3" />
-                        <strong>{r.newExpiry ? formatDate(r.newExpiry) : '—'}</strong>
+                        <strong>{formatDate(r.newExpiry)}</strong>
                       </p>
-                    )}
+                    ) : r.previousExpiry ? (
+                      <p className="text-xs text-ink2 mt-1">
+                        Current expiry: <strong>{formatDate(r.previousExpiry)}</strong>
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="flex flex-col items-end gap-2">

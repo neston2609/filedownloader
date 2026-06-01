@@ -92,7 +92,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         where: { id: request.userId }, select: { membershipStart: true, membershipMonths: true },
       })
       if (user) {
-        const ext = applyExtension(user, request.months)
+        const ext = applyExtension(user, request.months, now)
         finalExpiry = membershipExpiry(ext)
         ops.push(prisma.user.update({
           where: { id: request.userId },

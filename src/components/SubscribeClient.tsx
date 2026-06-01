@@ -215,7 +215,7 @@ export function SubscribeClient({ plans, expired, groupExpiry, myPackages, bankA
               <p className="text-ink font-semibold mt-1">+{selected.months} mo · ฿{selected.priceThb.toLocaleString()}</p>
             </div>
             <div className="bg-retro-mint/40 border-[1.5px] border-ink rounded-lg p-3">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-ink2">New expiry</p>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-ink2">Estimated if approved now</p>
               <p className="text-ink font-bold mt-1 flex items-center gap-1">
                 <ArrowRight className="w-3.5 h-3.5" /> {formatDate(projectedExpiry(selected).toISOString())}
               </p>
@@ -287,7 +287,7 @@ export function SubscribeClient({ plans, expired, groupExpiry, myPackages, bankA
                     </p>
                     {r.newExpiry && (
                       <p className="text-xs text-ink2 mt-0.5">
-                        New expiry if approved: <strong>{formatDate(r.newExpiry)}</strong>
+                        New expiry: <strong>{formatDate(r.newExpiry)}</strong>
                       </p>
                     )}
                   </div>
