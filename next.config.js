@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverActions: { allowedOrigins: ['localhost:8000'] },
+    serverActions: {
+      allowedOrigins: [
+        'localhost:8000',
+        'download.pricewise.in.th',
+        'download.japantoyshop.com',
+      ],
+    },
     // These server-only packages contain native bindings or non-bundlable
     // require() patterns and must NOT be processed by Next's bundler.
     serverComponentsExternalPackages: [
