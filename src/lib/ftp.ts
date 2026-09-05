@@ -23,6 +23,10 @@ interface FtpConfig {
   secure: boolean
 }
 
+export interface StreamRange {
+  start?: number
+}
+
 function normalizePath(p: string): string {
   if (!p) return '/'
   let s = p.trim().replace(/\\/g, '/').replace(/\/+/g, '/')
@@ -107,7 +111,8 @@ export async function streamFtpFile(
   password: string,
   secure: boolean,
   basePath: string,
-  filePath: string
+  filePath: string,
+  range: StreamRange = {}
 ): Promise<NodeJS.ReadableStream> {
   const full = joinPath(basePath, filePath)
   const pass = new PassThrough()
@@ -128,7 +133,7 @@ export async function streamFtpFile(
         secureOptions: { rejectUnauthorized: false },
       })
       await cwdInto(client, dir)
-      await client.downloadTo(pass, file)
+      await client.downloadTo(pass, file, range.start ?? 0)
     } catch (err) {
       pass.destroy(err instanceof Error ? err : new Error('FTP download failed'))
     } finally {
@@ -138,6 +143,26 @@ export async function streamFtpFile(
   })()
 
   return pass
+}
+
+export async function getFtpFileSize(
+  host: string,
+  port: number,
+  username: string,
+  password: string,
+  secure: boolean,
+  basePath: string,
+  filePath: string
+): Promise<number> {
+  const full = joinPath(basePath, filePath)
+  const lastSlash = full.lastIndexOf('/')
+  const dir = lastSlash > 0 ? full.slice(0, lastSlash) : '/'
+  const file = full.slice(lastSlash + 1)
+
+  return withClient({ host, port, username, password, secure }, async (client) => {
+    await cwdInto(client, dir)
+    return client.size(file)
+  })
 }
 
 export async function testFtpConnection(

@@ -8,6 +8,11 @@ export interface SmbEntry {
   lastModified: Date
 }
 
+export interface StreamRange {
+  start?: number
+  end?: number
+}
+
 function buildSmbConfig(host: string, port: number, username: string, password: string, domain: string, sharePath: string) {
   const normalizedPath = sharePath.replace(/\//g, '\\').replace(/^\\+/, '')
   const parts = normalizedPath.split('\\')
@@ -60,7 +65,8 @@ export async function streamSmbFile(
   password: string,
   domain: string,
   basePath: string,
-  filePath: string
+  filePath: string,
+  range: StreamRange = {}
 ): Promise<NodeJS.ReadableStream> {
   const { smb2Config, subPath: configSubPath } = buildSmbConfig(host, port, username, password, domain, basePath)
   const client = new SMB2(smb2Config)
@@ -68,7 +74,7 @@ export async function streamSmbFile(
 
   return new Promise((resolve, reject) => {
     const c = client as any
-    c.createReadStream(fullPath, (err?: Error, stream?: NodeJS.ReadableStream) => {
+    c.createReadStream(fullPath, range, (err?: Error, stream?: NodeJS.ReadableStream) => {
       if (err || !stream) {
         c.close()
         return reject(err ?? new Error('No stream returned'))
@@ -76,6 +82,30 @@ export async function streamSmbFile(
       stream.on('end', () => c.close())
       stream.on('error', () => c.close())
       resolve(stream)
+    })
+  })
+}
+
+export async function getSmbFileSize(
+  host: string,
+  port: number,
+  username: string,
+  password: string,
+  domain: string,
+  basePath: string,
+  filePath: string
+): Promise<number> {
+  const { smb2Config, subPath: configSubPath } = buildSmbConfig(host, port, username, password, domain, basePath)
+  const client = new SMB2(smb2Config)
+  const fullPath = [configSubPath, filePath].filter(Boolean).join('\\')
+
+  return new Promise((resolve, reject) => {
+    const c = client as any
+    c.stat(fullPath, (err?: Error, stats?: { size?: number }) => {
+      c.close()
+      if (err) return reject(err)
+      if (typeof stats?.size !== 'number') return reject(new Error('Unable to read SMB file size'))
+      resolve(stats.size)
     })
   })
 }

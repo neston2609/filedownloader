@@ -24,6 +24,11 @@ interface ScpConfig {
   passphrase?: string
 }
 
+export interface StreamRange {
+  start?: number
+  end?: number
+}
+
 function buildConnectOptions(cfg: ScpConfig) {
   const opts: SftpClient.ConnectOptions = {
     host: cfg.host,
@@ -97,25 +102,48 @@ export async function listScpDirectory(
 export async function streamScpFile(
   cfg: ScpConfig,
   basePath: string,
-  filePath: string
+  filePath: string,
+  range: StreamRange = {}
 ): Promise<NodeJS.ReadableStream> {
   const full = joinPath(basePath, filePath)
   const pass = new PassThrough()
+  const sftp = new SftpClient()
 
-  ;(async () => {
-    const sftp = new SftpClient()
-    try {
-      await sftp.connect(buildConnectOptions(cfg))
-      await sftp.get(full, pass)
-    } catch (err) {
-      pass.destroy(err instanceof Error ? err : new Error('SCP download failed'))
-    } finally {
-      try { await sftp.end() } catch {}
-      pass.end()
+  try {
+    await sftp.connect(buildConnectOptions(cfg))
+    const source = sftp.createReadStream(full, range)
+    const cleanup = () => {
+      try { source.destroy() } catch {}
+      sftp.end().catch(() => {})
     }
-  })()
 
-  return pass
+    source.on('error', (err: Error) => {
+      pass.destroy(err instanceof Error ? err : new Error('SCP download failed'))
+      cleanup()
+    })
+    source.on('end', () => {
+      sftp.end().catch(() => {})
+    })
+    pass.on('close', cleanup)
+    source.pipe(pass)
+
+    return pass
+  } catch (err) {
+    try { await sftp.end() } catch {}
+    throw err
+  }
+}
+
+export async function getScpFileSize(
+  cfg: ScpConfig,
+  basePath: string,
+  filePath: string
+): Promise<number> {
+  const full = joinPath(basePath, filePath)
+  return withClient(cfg, async (sftp) => {
+    const stats = await sftp.stat(full)
+    return stats.size
+  })
 }
 
 export async function testScpConnection(
